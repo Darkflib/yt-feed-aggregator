@@ -86,3 +86,23 @@ async def upsert_user_channel(
     await db.commit()
     await db.refresh(channel)
     return channel
+
+
+async def list_user_channels(
+    db: AsyncSession, user_id: str, active_only: bool = True
+) -> list[UserChannel]:
+    """List all channels for a user.
+
+    Args:
+        db: Database session
+        user_id: The user's ID
+        active_only: If True, only return active channels (default: True)
+
+    Returns:
+        List of UserChannel objects
+    """
+    query = select(UserChannel).where(UserChannel.user_id == user_id)
+    if active_only:
+        query = query.where(UserChannel.active == True)
+    result = await db.execute(query.order_by(UserChannel.channel_title))
+    return list(result.scalars().all())
