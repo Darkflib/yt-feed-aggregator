@@ -1,0 +1,29 @@
+[project]
+name = "yt-feed-aggregator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "alembic>=1.17.1",
+    "authlib>=1.6.5",
+    "cryptography>=46.0.3",
+    "fastapi>=0.121.0",
+    "feedparser>=6.0.12",
+    "httpx>=0.28.1",
+    "pydantic>=2.12.4",
+    "pydantic-settings>=2.11.0",
+    "python-jose>=3.5.0",
+    "redis>=7.0.1",
+    "sqlalchemy>=2.0.44",
+    "uvicorn>=0.38.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.18.2",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+    "ruff>=0.14.3",
+]
