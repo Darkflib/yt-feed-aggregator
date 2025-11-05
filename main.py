@@ -1,9 +1,11 @@
 """YouTube Feed Aggregator - Main application entry point."""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api import feed_router, health_router, me_router, subscriptions_router
 from app.auth.router import router as auth_router
@@ -44,6 +46,11 @@ def create_app() -> FastAPI:
     app.include_router(me_router)
     app.include_router(subscriptions_router)
     app.include_router(feed_router)
+
+    # Mount static files (built frontend) if static directory exists
+    static_dir = Path(__file__).parent / "static"
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     return app
 

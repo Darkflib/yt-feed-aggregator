@@ -16,3 +16,10 @@ wheels/
 *.db
 *.db-shm
 *.db-wal
+
+# Static files (built frontend)
+static/
+
+# Container volumes
+postgres-data/
+redis-data/

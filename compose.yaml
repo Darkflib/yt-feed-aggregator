@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file: .env
+    environment:
+      # Override database and redis URLs for container networking
+      YT_DATABASE_URL: postgresql+asyncpg://yt:yt@db:5432/yt_simple
+      YT_REDIS_URL: redis://redis:6379/0
+      YT_FRONTEND_ORIGIN: http://localhost:8080
+    depends_on:
+      - redis
+      - db
+    volumes:
+      # Mount volume for database migrations
+      - ./alembic:/app/alembic
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: yt
+      POSTGRES_PASSWORD: yt
+      POSTGRES_DB: yt_simple
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yt -d yt_simple"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  redis-data:
+  postgres-data:
