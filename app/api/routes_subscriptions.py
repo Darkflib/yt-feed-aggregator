@@ -88,7 +88,7 @@ async def refresh_subscriptions(
     # Decrypt the refresh token
     try:
         enc_key_bytes = validate_encryption_key(settings.token_enc_key)
-    except ValueError as e:
+    except ValueError:
         logger.error("Invalid encryption key configuration", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Service configuration error"
@@ -96,7 +96,7 @@ async def refresh_subscriptions(
 
     try:
         refresh_token = decrypt_refresh_token(enc_key_bytes, user.refresh_token_enc)
-    except Exception as e:
+    except Exception:
         logger.error("Failed to decrypt refresh token", exc_info=True)
         raise HTTPException(
             status_code=500, detail="An error occurred processing your request"
@@ -107,7 +107,7 @@ async def refresh_subscriptions(
         access_token = await _get_access_token_from_refresh(refresh_token)
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         logger.error("Failed to get access token", exc_info=True)
         raise HTTPException(
             status_code=500, detail="An error occurred processing your request"
@@ -119,7 +119,7 @@ async def refresh_subscriptions(
         subscriptions = await youtube.list_subscriptions()
     except PermissionError:
         raise HTTPException(status_code=401, detail="YouTube access token expired")
-    except Exception as e:
+    except Exception:
         logger.error("Failed to fetch subscriptions from YouTube", exc_info=True)
         raise HTTPException(
             status_code=500, detail="An error occurred fetching subscriptions"

@@ -133,7 +133,7 @@ async def callback(
     try:
         # Exchange authorization code for tokens
         token = await oauth.google.authorize_access_token(request)
-    except Exception as e:
+    except Exception:
         logger.error(f"OAuth authorization failed from IP: {ip_address}", exc_info=True)
         raise HTTPException(status_code=400, detail="Authentication failed")
 
@@ -157,7 +157,7 @@ async def callback(
         # Validate and convert encryption key (must be 32 bytes, base64-encoded)
         try:
             enc_key_bytes = validate_encryption_key(settings.token_enc_key)
-        except ValueError as e:
+        except ValueError:
             logger.error("Invalid encryption key configuration", exc_info=True)
             raise HTTPException(
                 status_code=500, detail="Service configuration error"
