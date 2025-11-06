@@ -6,6 +6,8 @@ from typing import Annotated
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from jose import JWTError, jwt
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.crypto import validate_encryption_key
@@ -16,6 +18,7 @@ from app.db.models import User
 from app.db.session import get_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+limiter = Limiter(key_func=get_remote_address)
 
 SESSION_COOKIE = "yt_simple_sess"
 
@@ -89,11 +92,14 @@ async def require_user(
 
 
 @router.get("/login")
+@limiter.limit("10/minute")
 async def login(request: Request):
     """
     Initiate OAuth login flow with Google.
 
     Redirects to Google OAuth with PKCE enabled and required scopes.
+
+    Rate limit: 10 requests per minute per IP to prevent abuse.
     """
     oauth = _get_oauth()
     settings = get_settings()
@@ -102,6 +108,7 @@ async def login(request: Request):
 
 
 @router.get("/callback")
+@limiter.limit("10/minute")
 async def callback(
     request: Request,
     response: Response,
@@ -180,9 +187,12 @@ async def callback(
 
 
 @router.post("/logout")
-async def logout(response: Response):
+@limiter.limit("20/minute")
+async def logout(request: Request, response: Response):
     """
     Clear the session cookie to log out the user.
+
+    Rate limit: 20 requests per minute per IP.
     """
     response.delete_cookie(key=SESSION_COOKIE, httponly=True, samesite="lax")
     return {"message": "Logged out successfully"}

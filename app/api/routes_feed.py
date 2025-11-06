@@ -1,7 +1,9 @@
 """Feed aggregation endpoints for the YouTube Feed Aggregator API."""
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from redis.asyncio import Redis
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_redis
@@ -14,10 +16,13 @@ from app.feed.aggregator import aggregate_feeds
 from app.rss.cache import fetch_and_cache_feed
 
 router = APIRouter(prefix="/api/feed", tags=["feed"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get("")
+@limiter.limit("120/minute")
 async def get_feed(
+    request: Request,
     limit: int = Query(default=24, le=60, description="Items per page (max 60)"),
     cursor: str | None = Query(default=None, description="Pagination cursor"),
     channel_id: str | None = Query(

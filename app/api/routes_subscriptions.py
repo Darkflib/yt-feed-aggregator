@@ -1,7 +1,9 @@
 """Subscription management endpoints for the YouTube Feed Aggregator API."""
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.crypto import validate_encryption_key
@@ -14,6 +16,7 @@ from app.db.session import get_session
 from app.youtube.client import YouTubeClient
 
 router = APIRouter(prefix="/api/subscriptions", tags=["subscriptions"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 async def _get_access_token_from_refresh(refresh_token: str) -> str:
@@ -51,7 +54,9 @@ async def _get_access_token_from_refresh(refresh_token: str) -> str:
 
 
 @router.post("/refresh")
+@limiter.limit("5/hour")
 async def refresh_subscriptions(
+    request: Request,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -132,7 +137,9 @@ async def refresh_subscriptions(
 
 
 @router.get("")
+@limiter.limit("60/minute")
 async def list_subscriptions(
+    request: Request,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_session),
 ):
