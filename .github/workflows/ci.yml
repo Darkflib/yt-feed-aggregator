@@ -60,10 +60,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
-          with:
-            cache: 'yarn'
-            cache-dependency-path: frontend/yarn.lock
+          node-version: 20
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
 
       - name: Install dependencies
         working-directory: frontend
