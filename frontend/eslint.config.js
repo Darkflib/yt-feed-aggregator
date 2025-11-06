@@ -1,4 +1,5 @@
 import js from '@eslint/js'
+import globals from 'globals'
 import typescript from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -17,8 +18,8 @@ export default [
         sourceType: 'module',
       },
       globals: {
-        browser: true,
-        es2020: true,
+        ...globals.browser,
+        ...globals.es2020,
       },
     },
     plugins: {
