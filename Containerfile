@@ -1,6 +1,6 @@
 # Multi-stage Containerfile for YouTube Feed Aggregator
 # Stage 1: Build frontend
-FROM node:20-bookworm AS frontend
+FROM node:24-bookworm AS frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
