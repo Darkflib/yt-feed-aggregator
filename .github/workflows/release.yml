@@ -77,7 +77,7 @@ jobs:
           YT_GOOGLE_CLIENT_ID: test-client-id
           YT_GOOGLE_CLIENT_SECRET: test-client-secret
           YT_GOOGLE_REDIRECT_URI: http://localhost:8080/auth/callback
-          YT_DATABASE_URL: sqlite+aiosqlite:///:memory:
+          YT_DATABASE_URL: sqlite+aiosqlite:///:memory
           YT_REDIS_URL: redis://localhost:6379/0
         run: pytest -v
 
