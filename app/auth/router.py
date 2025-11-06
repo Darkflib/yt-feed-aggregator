@@ -159,9 +159,7 @@ async def callback(
             enc_key_bytes = validate_encryption_key(settings.token_enc_key)
         except ValueError:
             logger.error("Invalid encryption key configuration", exc_info=True)
-            raise HTTPException(
-                status_code=500, detail="Service configuration error"
-            )
+            raise HTTPException(status_code=500, detail="Service configuration error")
 
         refresh_token_enc = encrypt_refresh_token(enc_key_bytes, refresh_token)
 
@@ -222,7 +220,9 @@ async def logout(
     if session_cookie:
         try:
             settings = get_settings()
-            payload = jwt.decode(session_cookie, settings.app_secret_key, algorithms=["HS256"])
+            payload = jwt.decode(
+                session_cookie, settings.app_secret_key, algorithms=["HS256"]
+            )
             user_id = payload.get("sub")
             logger.info(f"User logged out: user_id={user_id}, ip={ip_address}")
         except JWTError:

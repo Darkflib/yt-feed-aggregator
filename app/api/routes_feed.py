@@ -29,9 +29,7 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit("120/minute")
 async def get_feed(
     request: Request,
-    limit: int = Query(
-        default=24, ge=1, le=60, description="Items per page (1-60)"
-    ),
+    limit: int = Query(default=24, ge=1, le=60, description="Items per page (1-60)"),
     cursor: str | None = Query(default=None, description="Pagination cursor"),
     channel_id: str | None = Query(
         default=None, description="Filter to single channel"

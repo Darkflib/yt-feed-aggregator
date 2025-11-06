@@ -90,9 +90,7 @@ async def refresh_subscriptions(
         enc_key_bytes = validate_encryption_key(settings.token_enc_key)
     except ValueError:
         logger.error("Invalid encryption key configuration", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail="Service configuration error"
-        )
+        raise HTTPException(status_code=500, detail="Service configuration error")
 
     try:
         refresh_token = decrypt_refresh_token(enc_key_bytes, user.refresh_token_enc)
