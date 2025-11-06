@@ -58,7 +58,11 @@ class APIClient {
 
   private async request<T>(
     endpoint: string,
-    options: Record<string, unknown> = {}
+    options: {
+      method?: string;
+      headers?: Record<string, string>;
+      body?: string;
+    } = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     const response = await fetch(url, {
