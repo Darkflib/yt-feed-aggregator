@@ -423,7 +423,8 @@ async def test_me_endpoint_returns_user_info():
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             # Call /auth/me with cookie
-            response = await client.get("/auth/me", cookies={SESSION_COOKIE: token})
+            client.cookies.set(SESSION_COOKIE, token)
+            response = await client.get("/auth/me")
 
             assert response.status_code == 200
             data = response.json()

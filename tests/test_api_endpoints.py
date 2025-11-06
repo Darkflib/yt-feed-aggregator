@@ -125,7 +125,8 @@ async def test_api_me_returns_user_when_authenticated(
 
         transport = ASGITransport(app=test_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            response = await client.get("/api/me", cookies={SESSION_COOKIE: token})
+            client.cookies.set(SESSION_COOKIE, token)
+            response = await client.get("/api/me")
 
             assert response.status_code == 200
             data = response.json()
@@ -193,9 +194,8 @@ async def test_subscriptions_list_returns_user_channels(
 
         transport = ASGITransport(app=test_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            response = await client.get(
-                "/api/subscriptions", cookies={SESSION_COOKIE: token}
-            )
+            client.cookies.set(SESSION_COOKIE, token)
+            response = await client.get("/api/subscriptions")
 
             assert response.status_code == 200
             data = response.json()
@@ -258,9 +258,8 @@ async def test_feed_merges_and_paginates_correctly(
                 async with AsyncClient(
                     transport=transport, base_url="http://test"
                 ) as client:
-                    response = await client.get(
-                        "/api/feed?limit=10", cookies={SESSION_COOKIE: token}
-                    )
+                    client.cookies.set(SESSION_COOKIE, token)
+                    response = await client.get("/api/feed?limit=10")
 
                     assert response.status_code == 200
                     data = response.json()
@@ -327,8 +326,9 @@ async def test_feed_filters_to_single_channel(
                 async with AsyncClient(
                     transport=transport, base_url="http://test"
                 ) as client:
+                    client.cookies.set(SESSION_COOKIE, token)
                     response = await client.get(
-                        "/api/feed?channel_id=UCxxxxxxxxxxxxxxxxxxxx01", cookies={SESSION_COOKIE: token}
+                        "/api/feed?channel_id=UCxxxxxxxxxxxxxxxxxxxx01"
                     )
 
                     assert response.status_code == 200
@@ -387,9 +387,8 @@ async def test_feed_respects_limit_parameter(
                     transport=transport, base_url="http://test"
                 ) as client:
                     # Test with custom limit
-                    response = await client.get(
-                        "/api/feed?limit=15", cookies={SESSION_COOKIE: token}
-                    )
+                    client.cookies.set(SESSION_COOKIE, token)
+                    response = await client.get("/api/feed?limit=15")
 
                     assert response.status_code == 200
                     data = response.json()
