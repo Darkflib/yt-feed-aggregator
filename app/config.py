@@ -48,5 +48,5 @@ def get_settings() -> Settings:
     """Get cached settings instance (singleton pattern)."""
     global _settings
     if _settings is None:
-        _settings = Settings()
+        _settings = Settings()  # type: ignore[call-arg]
     return _settings

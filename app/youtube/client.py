@@ -44,7 +44,7 @@ class YouTubeClient:
         async with httpx.AsyncClient(timeout=15) as client:
             while True:
                 # Build request parameters
-                params = {"part": "snippet", "mine": "true", "maxResults": 50}
+                params: dict[str, str | int] = {"part": "snippet", "mine": "true", "maxResults": 50}
                 if token:
                     params["pageToken"] = token
 
