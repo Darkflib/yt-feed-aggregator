@@ -1,6 +1,9 @@
 """Feed aggregation endpoints for the YouTube Feed Aggregator API."""
 
-from fastapi import APIRouter, Depends, Query, Request
+import base64
+import re
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from redis.asyncio import Redis
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -15,6 +18,9 @@ from app.db.session import get_session
 from app.feed.aggregator import aggregate_feeds
 from app.rss.cache import fetch_and_cache_feed
 
+# YouTube channel IDs start with UC and are 24 characters (alphanumeric, -, _)
+CHANNEL_ID_PATTERN = re.compile(r"^UC[\w-]{22}$")
+
 router = APIRouter(prefix="/api/feed", tags=["feed"])
 limiter = Limiter(key_func=get_remote_address)
 
@@ -23,7 +29,9 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit("120/minute")
 async def get_feed(
     request: Request,
-    limit: int = Query(default=24, le=60, description="Items per page (max 60)"),
+    limit: int = Query(
+        default=24, ge=1, le=60, description="Items per page (1-60)"
+    ),
     cursor: str | None = Query(default=None, description="Pagination cursor"),
     channel_id: str | None = Query(
         default=None, description="Filter to single channel"
@@ -52,6 +60,25 @@ async def get_feed(
             - next_cursor: Cursor for next page (null if no more items)
     """
     settings = get_settings()
+
+    # Validate cursor format if provided
+    if cursor:
+        try:
+            # Cursor should be valid base64
+            decoded = base64.b64decode(cursor, validate=True)
+            # Basic sanity check - should contain timestamp and video_id separated by |
+            if b"|" not in decoded:
+                raise ValueError("Invalid cursor format")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid cursor format")
+
+    # Validate channel_id format if provided (prevents Redis injection)
+    if channel_id:
+        if not CHANNEL_ID_PATTERN.match(channel_id):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid channel_id format. Must be a valid YouTube channel ID (UC...)",
+            )
 
     # Determine which channels to fetch
     if channel_id:

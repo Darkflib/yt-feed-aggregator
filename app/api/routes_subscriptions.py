@@ -1,5 +1,7 @@
 """Subscription management endpoints for the YouTube Feed Aggregator API."""
 
+import logging
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from slowapi import Limiter
@@ -14,6 +16,8 @@ from app.db import crud
 from app.db.models import User
 from app.db.session import get_session
 from app.youtube.client import YouTubeClient
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/subscriptions", tags=["subscriptions"])
 limiter = Limiter(key_func=get_remote_address)
@@ -85,13 +89,17 @@ async def refresh_subscriptions(
     try:
         enc_key_bytes = validate_encryption_key(settings.token_enc_key)
     except ValueError as e:
-        raise HTTPException(status_code=500, detail=f"Invalid encryption key configuration: {e}")
+        logger.error("Invalid encryption key configuration", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="Service configuration error"
+        )
 
     try:
         refresh_token = decrypt_refresh_token(enc_key_bytes, user.refresh_token_enc)
     except Exception as e:
+        logger.error("Failed to decrypt refresh token", exc_info=True)
         raise HTTPException(
-            status_code=500, detail=f"Failed to decrypt refresh token: {str(e)}"
+            status_code=500, detail="An error occurred processing your request"
         )
 
     # Get a fresh access token
@@ -100,8 +108,9 @@ async def refresh_subscriptions(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error("Failed to get access token", exc_info=True)
         raise HTTPException(
-            status_code=500, detail=f"Failed to get access token: {str(e)}"
+            status_code=500, detail="An error occurred processing your request"
         )
 
     # Fetch subscriptions from YouTube
@@ -111,8 +120,9 @@ async def refresh_subscriptions(
     except PermissionError:
         raise HTTPException(status_code=401, detail="YouTube access token expired")
     except Exception as e:
+        logger.error("Failed to fetch subscriptions from YouTube", exc_info=True)
         raise HTTPException(
-            status_code=500, detail=f"Failed to fetch subscriptions: {str(e)}"
+            status_code=500, detail="An error occurred fetching subscriptions"
         )
 
     # Upsert channels in the database

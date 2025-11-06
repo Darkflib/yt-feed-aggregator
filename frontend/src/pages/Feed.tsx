@@ -34,7 +34,9 @@ export default function Feed() {
       setFeedItems(feedData.items);
       setNextCursor(feedData.next_cursor);
     } catch (err) {
-      console.error('Failed to load feed:', err);
+      if (import.meta.env.DEV) {
+        console.error('Failed to load feed:', err);
+      }
       setError(err instanceof Error ? err.message : 'Failed to load feed');
     }
   }, [selectedChannelId]);
@@ -53,7 +55,9 @@ export default function Feed() {
       // Load initial feed
       await loadFeed(null);
     } catch (err) {
-      console.error('Failed to load user data:', err);
+      if (import.meta.env.DEV) {
+        console.error('Failed to load user data:', err);
+      }
       // If unauthorized, redirect to login
       if (err instanceof Error && err.message.includes('401')) {
         navigate('/login');
@@ -91,9 +95,13 @@ export default function Feed() {
       resetPagination();
       await loadFeed(null);
 
-      console.log(`Synced ${result.count} channels from YouTube`);
+      if (import.meta.env.DEV) {
+        console.log(`Synced ${result.count} channels from YouTube`);
+      }
     } catch (err) {
-      console.error('Failed to refresh subscriptions:', err);
+      if (import.meta.env.DEV) {
+        console.error('Failed to refresh subscriptions:', err);
+      }
       setError(err instanceof Error ? err.message : 'Failed to refresh subscriptions');
     } finally {
       setIsRefreshing(false);
@@ -105,7 +113,9 @@ export default function Feed() {
       await api.logout();
       navigate('/login');
     } catch (err) {
-      console.error('Logout failed:', err);
+      if (import.meta.env.DEV) {
+        console.error('Logout failed:', err);
+      }
     }
   };
 

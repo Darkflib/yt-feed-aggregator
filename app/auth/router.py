@@ -1,5 +1,6 @@
 """FastAPI router for Google OAuth authentication."""
 
+import logging
 import time
 from typing import Annotated
 
@@ -16,6 +17,8 @@ from app.config import get_settings
 from app.db import crud
 from app.db.models import User
 from app.db.session import get_session
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 limiter = Limiter(key_func=get_remote_address)
@@ -101,6 +104,9 @@ async def login(request: Request):
 
     Rate limit: 10 requests per minute per IP to prevent abuse.
     """
+    ip_address = request.client.host if request.client else "unknown"
+    logger.info(f"Login attempt initiated from IP: {ip_address}")
+
     oauth = _get_oauth()
     settings = get_settings()
     redirect_uri = str(settings.google_redirect_uri)
@@ -122,12 +128,14 @@ async def callback(
     """
     oauth = _get_oauth()
     settings = get_settings()
+    ip_address = request.client.host if request.client else "unknown"
 
     try:
         # Exchange authorization code for tokens
         token = await oauth.google.authorize_access_token(request)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"OAuth error: {str(e)}")
+        logger.error(f"OAuth authorization failed from IP: {ip_address}", exc_info=True)
+        raise HTTPException(status_code=400, detail="Authentication failed")
 
     # Extract user information from ID token
     userinfo = token.get("userinfo")
@@ -150,7 +158,10 @@ async def callback(
         try:
             enc_key_bytes = validate_encryption_key(settings.token_enc_key)
         except ValueError as e:
-            raise HTTPException(status_code=500, detail=f"Invalid encryption key configuration: {e}")
+            logger.error("Invalid encryption key configuration", exc_info=True)
+            raise HTTPException(
+                status_code=500, detail="Service configuration error"
+            )
 
         refresh_token_enc = encrypt_refresh_token(enc_key_bytes, refresh_token)
 
@@ -166,6 +177,11 @@ async def callback(
 
     # Create session token
     session_token = _create_session_token(user.id)
+
+    # Log successful authentication
+    logger.info(
+        f"User authenticated successfully: user_id={user.id}, email={user.email}, ip={ip_address}"
+    )
 
     # Determine if we're in production
     is_prod = settings.env == "prod"
@@ -188,12 +204,32 @@ async def callback(
 
 @router.post("/logout")
 @limiter.limit("20/minute")
-async def logout(request: Request, response: Response):
+async def logout(
+    request: Request,
+    response: Response,
+    session_cookie: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
+):
     """
     Clear the session cookie to log out the user.
 
+    Does not require authentication to allow logout even with invalid tokens.
+
     Rate limit: 20 requests per minute per IP.
     """
+    ip_address = request.client.host if request.client else "unknown"
+
+    # Try to extract user info from token for logging, but don't fail if invalid
+    if session_cookie:
+        try:
+            settings = get_settings()
+            payload = jwt.decode(session_cookie, settings.app_secret_key, algorithms=["HS256"])
+            user_id = payload.get("sub")
+            logger.info(f"User logged out: user_id={user_id}, ip={ip_address}")
+        except JWTError:
+            logger.info(f"Logout attempt with invalid token from ip={ip_address}")
+    else:
+        logger.info(f"Logout attempt without token from ip={ip_address}")
+
     response.delete_cookie(key=SESSION_COOKIE, httponly=True, samesite="lax")
     return {"message": "Logged out successfully"}
 

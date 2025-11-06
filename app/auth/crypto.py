@@ -31,9 +31,9 @@ def validate_encryption_key(enc_key: str | bytes) -> bytes:
             enc_key_bytes = base64.b64decode(enc_key, validate=True)
         except Exception as e:
             raise ValueError(
-                f"Encryption key must be base64-encoded. "
-                f"Generate with: python -c \"import secrets, base64; "
-                f'print(base64.b64encode(secrets.token_bytes(32)).decode())"'
+                "Encryption key must be base64-encoded. "
+                'Generate with: python -c "import secrets, base64; '
+                'print(base64.b64encode(secrets.token_bytes(32)).decode())"'
             ) from e
     else:
         enc_key_bytes = enc_key
@@ -41,7 +41,7 @@ def validate_encryption_key(enc_key: str | bytes) -> bytes:
     if len(enc_key_bytes) != 32:
         raise ValueError(
             f"Encryption key must be exactly 32 bytes, got {len(enc_key_bytes)} bytes. "
-            f"Generate with: python -c \"import secrets, base64; "
+            f'Generate with: python -c "import secrets, base64; '
             f'print(base64.b64encode(secrets.token_bytes(32)).decode())"'
         )
 

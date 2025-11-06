@@ -9,10 +9,41 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api import feed_router, health_router, me_router, subscriptions_router
 from app.auth.router import router as auth_router
 from app.config import get_settings
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Middleware to add security headers to all responses."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+
+        # Prevent MIME type sniffing
+        response.headers["X-Content-Type-Options"] = "nosniff"
+
+        # Prevent clickjacking attacks
+        response.headers["X-Frame-Options"] = "DENY"
+
+        # Content Security Policy - restrict resource loading
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https:; "
+            "font-src 'self'; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'"
+        )
+
+        # Additional security headers
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+        return response
 
 
 @asynccontextmanager
@@ -39,13 +70,16 @@ def create_app() -> FastAPI:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-    # Configure CORS
+    # Add security headers middleware
+    app.add_middleware(SecurityHeadersMiddleware)
+
+    # Configure CORS - restrict to specific methods and headers for security
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[settings.frontend_origin],
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "OPTIONS"],  # Only methods used by the API
+        allow_headers=["Content-Type", "Accept"],  # Only necessary headers
     )
 
     # Include routers

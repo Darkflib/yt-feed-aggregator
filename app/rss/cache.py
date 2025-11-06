@@ -2,6 +2,7 @@
 
 import json
 import random
+import re
 from datetime import datetime
 
 import defusedxml.ElementTree as ET
@@ -18,6 +19,10 @@ NAMESPACES = {
     "yt": "http://www.youtube.com/xml/schemas/2015",
     "atom": "http://www.w3.org/2005/Atom",
 }
+
+# YouTube channel IDs start with UC and are 24 characters (alphanumeric, -, _)
+# This prevents Redis injection attacks
+CHANNEL_ID_PATTERN = re.compile(r"^UC[\w-]{22}$")
 
 
 def _key(channel_id: str) -> str:
@@ -43,10 +48,15 @@ async def fetch_and_cache_feed(redis: Redis, channel_id: str) -> list[FeedItem]:
     Raises:
         httpx.HTTPError: If the HTTP request fails
         defusedxml.ElementTree.ParseError: If XML parsing fails
+        ValueError: If channel_id format is invalid
 
     Note:
         Uses defusedxml to prevent XXE (XML External Entity) attacks
     """
+    # Validate channel_id format to prevent Redis injection attacks
+    if not CHANNEL_ID_PATTERN.match(channel_id):
+        raise ValueError(f"Invalid channel_id format: {channel_id}")
+
     settings = get_settings()
     base_ttl = settings.feed_ttl_seconds
     splay = settings.feed_ttl_splay_max

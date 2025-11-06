@@ -275,17 +275,17 @@ async def test_feed_filters_to_single_channel(
     test_app, test_db, test_user, mock_settings
 ):
     """Test /api/feed?channel_id=X filters to single channel."""
-    # Add multiple channels to database
+    # Add multiple channels to database (use valid YouTube channel ID format)
     async with test_db() as db:
         channel1 = UserChannel(
             user_id=test_user.id,
-            channel_id="UC111",
+            channel_id="UCxxxxxxxxxxxxxxxxxxxx01",  # Valid format: UC + 22 chars = 24 total
             channel_title="Channel A",
             active=True,
         )
         channel2 = UserChannel(
             user_id=test_user.id,
-            channel_id="UC222",
+            channel_id="UCxxxxxxxxxxxxxxxxxxxx02",  # Valid format: UC + 22 chars = 24 total
             channel_title="Channel B",
             active=True,
         )
@@ -298,7 +298,7 @@ async def test_feed_filters_to_single_channel(
     feed_items_channel1 = [
         FeedItem(
             video_id=f"video_ch1_{i}",
-            channel_id="UC111",
+            channel_id="UCxxxxxxxxxxxxxxxxxxxx01",
             title=f"Video {i}",
             link=f"https://youtube.com/watch?v=video_ch1_{i}",
             published=now,
@@ -328,7 +328,7 @@ async def test_feed_filters_to_single_channel(
                     transport=transport, base_url="http://test"
                 ) as client:
                     response = await client.get(
-                        "/api/feed?channel_id=UC111", cookies={SESSION_COOKIE: token}
+                        "/api/feed?channel_id=UCxxxxxxxxxxxxxxxxxxxx01", cookies={SESSION_COOKIE: token}
                     )
 
                     assert response.status_code == 200
@@ -336,7 +336,7 @@ async def test_feed_filters_to_single_channel(
                     assert len(data["items"]) == 5
                     # Verify all items are from the requested channel
                     for item in data["items"]:
-                        assert item["channel_id"] == "UC111"
+                        assert item["channel_id"] == "UCxxxxxxxxxxxxxxxxxxxx01"
 
 
 @pytest.mark.asyncio
