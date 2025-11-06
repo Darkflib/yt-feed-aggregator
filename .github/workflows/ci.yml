@@ -61,16 +61,16 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 20
-          cache: 'yarn'
-          cache-dependency-path: frontend/yarn.lock
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         working-directory: frontend
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Run ESLint
         working-directory: frontend
-        run: yarn run eslint
+        run: npm run eslint
 
       - name: Run TypeScript type check
         working-directory: frontend
