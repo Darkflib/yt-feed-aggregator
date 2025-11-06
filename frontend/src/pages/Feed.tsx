@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, type User, type Channel, type FeedItem } from '../api/client';
 import VideoCard from '../components/VideoCard';
@@ -22,20 +22,24 @@ export default function Feed() {
   const [currentPage, setCurrentPage] = useState(1);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
-  // Load user and channels on mount
-  useEffect(() => {
-    loadUserAndChannels();
-  }, []);
+  const loadFeed = useCallback(async (cursor: string | null) => {
+    try {
+      setError(null);
+      const feedData = await api.getFeed({
+        limit: 24,
+        cursor,
+        channel_id: selectedChannelId,
+      });
 
-  // Load feed when channel filter changes
-  useEffect(() => {
-    if (user) {
-      resetPagination();
-      loadFeed(null);
+      setFeedItems(feedData.items);
+      setNextCursor(feedData.next_cursor);
+    } catch (err) {
+      console.error('Failed to load feed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load feed');
     }
   }, [selectedChannelId]);
 
-  const loadUserAndChannels = async () => {
+  const loadUserAndChannels = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -59,24 +63,20 @@ export default function Feed() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [navigate, loadFeed]);
 
-  const loadFeed = async (cursor: string | null) => {
-    try {
-      setError(null);
-      const feedData = await api.getFeed({
-        limit: 24,
-        cursor,
-        channel_id: selectedChannelId,
-      });
+  // Load user and channels on mount
+  useEffect(() => {
+    loadUserAndChannels();
+  }, [loadUserAndChannels]);
 
-      setFeedItems(feedData.items);
-      setNextCursor(feedData.next_cursor);
-    } catch (err) {
-      console.error('Failed to load feed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load feed');
+  // Load feed when channel filter changes
+  useEffect(() => {
+    if (user) {
+      resetPagination();
+      loadFeed(null);
     }
-  };
+  }, [selectedChannelId, user, loadFeed]);
 
   const handleRefreshSubscriptions = async () => {
     try {
