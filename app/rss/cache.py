@@ -2,8 +2,9 @@
 
 import json
 import random
-import xml.etree.ElementTree as ET
 from datetime import datetime
+
+import defusedxml.ElementTree as ET
 
 import httpx
 from redis.asyncio import Redis
@@ -41,7 +42,10 @@ async def fetch_and_cache_feed(redis: Redis, channel_id: str) -> list[FeedItem]:
 
     Raises:
         httpx.HTTPError: If the HTTP request fails
-        xml.etree.ElementTree.ParseError: If XML parsing fails
+        defusedxml.ElementTree.ParseError: If XML parsing fails
+
+    Note:
+        Uses defusedxml to prevent XXE (XML External Entity) attacks
     """
     settings = get_settings()
     base_ttl = settings.feed_ttl_seconds
