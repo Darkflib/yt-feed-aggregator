@@ -34,8 +34,8 @@ async def test_list_subscriptions_single_page(youtube_client):
                     "title": "Channel One",
                     "resourceId": {
                         "kind": "youtube#channel",
-                        "channelId": "channel-id-1"
-                    }
+                        "channelId": "channel-id-1",
+                    },
                 }
             },
             {
@@ -43,10 +43,10 @@ async def test_list_subscriptions_single_page(youtube_client):
                     "title": "Channel Two",
                     "resourceId": {
                         "kind": "youtube#channel",
-                        "channelId": "channel-id-2"
-                    }
+                        "channelId": "channel-id-2",
+                    },
                 }
-            }
+            },
         ]
         # No nextPageToken means single page
     }
@@ -92,8 +92,8 @@ async def test_list_subscriptions_multi_page(youtube_client):
                     "title": "Channel One",
                     "resourceId": {
                         "kind": "youtube#channel",
-                        "channelId": "channel-id-1"
-                    }
+                        "channelId": "channel-id-1",
+                    },
                 }
             },
             {
@@ -101,12 +101,12 @@ async def test_list_subscriptions_multi_page(youtube_client):
                     "title": "Channel Two",
                     "resourceId": {
                         "kind": "youtube#channel",
-                        "channelId": "channel-id-2"
-                    }
+                        "channelId": "channel-id-2",
+                    },
                 }
-            }
+            },
         ],
-        "nextPageToken": "page-2-token"
+        "nextPageToken": "page-2-token",
     }
 
     # Mock response data for page 2
@@ -117,8 +117,8 @@ async def test_list_subscriptions_multi_page(youtube_client):
                     "title": "Channel Three",
                     "resourceId": {
                         "kind": "youtube#channel",
-                        "channelId": "channel-id-3"
-                    }
+                        "channelId": "channel-id-3",
+                    },
                 }
             }
         ]
@@ -129,8 +129,10 @@ async def test_list_subscriptions_multi_page(youtube_client):
     mock_resp2 = create_mock_response(200, mock_response_page2)
 
     # Patch httpx.AsyncClient and asyncio.sleep
-    with patch("httpx.AsyncClient") as mock_client_class, \
-         patch("app.youtube.client.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+    with (
+        patch("httpx.AsyncClient") as mock_client_class,
+        patch("app.youtube.client.asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+    ):
         mock_client = AsyncMock()
         mock_client.get = AsyncMock(side_effect=[mock_resp1, mock_resp2])
         mock_client.__aenter__.return_value = mock_client
@@ -170,8 +172,8 @@ async def test_list_subscriptions_deduplication(youtube_client):
                     "title": "Channel One",
                     "resourceId": {
                         "kind": "youtube#channel",
-                        "channelId": "channel-id-1"
-                    }
+                        "channelId": "channel-id-1",
+                    },
                 }
             },
             {
@@ -179,8 +181,8 @@ async def test_list_subscriptions_deduplication(youtube_client):
                     "title": "Channel One Duplicate",
                     "resourceId": {
                         "kind": "youtube#channel",
-                        "channelId": "channel-id-1"  # Duplicate
-                    }
+                        "channelId": "channel-id-1",  # Duplicate
+                    },
                 }
             },
             {
@@ -188,10 +190,10 @@ async def test_list_subscriptions_deduplication(youtube_client):
                     "title": "Channel Two",
                     "resourceId": {
                         "kind": "youtube#channel",
-                        "channelId": "channel-id-2"
-                    }
+                        "channelId": "channel-id-2",
+                    },
                 }
-            }
+            },
         ]
     }
 
@@ -253,9 +255,7 @@ async def test_list_subscriptions_http_error(youtube_client):
 
     def raise_status_error():
         raise httpx.HTTPStatusError(
-            "Server Error",
-            request=mock_request,
-            response=mock_response
+            "Server Error", request=mock_request, response=mock_response
         )
 
     mock_response.raise_for_status = raise_status_error
@@ -285,8 +285,8 @@ async def test_list_subscriptions_filters_non_channel_items(youtube_client):
                     "title": "Channel One",
                     "resourceId": {
                         "kind": "youtube#channel",
-                        "channelId": "channel-id-1"
-                    }
+                        "channelId": "channel-id-1",
+                    },
                 }
             },
             {
@@ -294,8 +294,8 @@ async def test_list_subscriptions_filters_non_channel_items(youtube_client):
                     "title": "Some Playlist",
                     "resourceId": {
                         "kind": "youtube#playlist",  # Not a channel
-                        "playlistId": "playlist-id-1"
-                    }
+                        "playlistId": "playlist-id-1",
+                    },
                 }
             },
             {
@@ -303,10 +303,10 @@ async def test_list_subscriptions_filters_non_channel_items(youtube_client):
                     "title": "Channel Two",
                     "resourceId": {
                         "kind": "youtube#channel",
-                        "channelId": "channel-id-2"
-                    }
+                        "channelId": "channel-id-2",
+                    },
                 }
-            }
+            },
         ]
     }
 
@@ -333,9 +333,7 @@ async def test_list_subscriptions_filters_non_channel_items(youtube_client):
 async def test_list_subscriptions_empty_response(youtube_client):
     """Test handling of empty subscription list."""
     # Mock empty response
-    mock_response_data = {
-        "items": []
-    }
+    mock_response_data = {"items": []}
 
     mock_response = create_mock_response(200, mock_response_data)
 

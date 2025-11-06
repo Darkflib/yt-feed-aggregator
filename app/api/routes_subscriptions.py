@@ -2,6 +2,7 @@
 
 import base64
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,7 +13,6 @@ from app.db import crud
 from app.db.models import User
 from app.db.session import get_session
 from app.youtube.client import YouTubeClient
-import httpx
 
 router = APIRouter(prefix="/api/subscriptions", tags=["subscriptions"])
 

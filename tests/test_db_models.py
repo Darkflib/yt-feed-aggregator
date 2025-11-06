@@ -3,10 +3,15 @@
 import pytest
 import pytest_asyncio
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.db.crud import (
+    create_or_update_user,
+    get_user_by_id,
+    get_user_by_sub,
+    upsert_user_channel,
+)
 from app.db.models import Base, User, UserChannel
-from app.db.crud import get_user_by_sub, upsert_user_channel, get_user_by_id, create_or_update_user
 
 
 @pytest_asyncio.fixture
@@ -119,9 +124,7 @@ async def test_user_channel_relationship(db_session: AsyncSession):
 
     # Reload user to get relationships
     await db_session.refresh(user)
-    result = await db_session.execute(
-        select(User).where(User.id == user.id)
-    )
+    result = await db_session.execute(select(User).where(User.id == user.id))
     user_with_channels = result.scalar_one()
 
     # Access channels relationship

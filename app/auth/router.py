@@ -133,9 +133,7 @@ async def callback(
     picture = userinfo.get("picture")
 
     if not google_sub or not email:
-        raise HTTPException(
-            status_code=400, detail="Missing required user information"
-        )
+        raise HTTPException(status_code=400, detail="Missing required user information")
 
     # Encrypt refresh token if present
     refresh_token = token.get("refresh_token")

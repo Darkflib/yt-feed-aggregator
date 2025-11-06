@@ -1,7 +1,7 @@
 """Tests for RSS feed caching functionality."""
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -9,8 +9,6 @@ import pytest
 from redis.asyncio import Redis
 
 from app.rss.cache import fetch_and_cache_feed
-from app.rss.models import FeedItem
-
 
 # Sample YouTube RSS feed XML
 SAMPLE_RSS_XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -63,7 +61,9 @@ def mock_settings():
 
 
 @pytest.mark.asyncio
-async def test_cache_hit_returns_cached_data_without_http_call(mock_redis, mock_settings):
+async def test_cache_hit_returns_cached_data_without_http_call(
+    mock_redis, mock_settings
+):
     """Test that cache hit returns cached data without making HTTP request."""
     channel_id = "UCuAXFkgsw1L7xaCfnd5JJOw"
 
@@ -236,7 +236,9 @@ async def test_http_error_raises_exception(mock_redis, mock_settings):
     mock_client_instance = AsyncMock()
     mock_client_instance.get = AsyncMock(side_effect=http_error)
     mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
-    mock_client_instance.__aexit__ = AsyncMock(return_value=False)  # Don't suppress exception
+    mock_client_instance.__aexit__ = AsyncMock(
+        return_value=False
+    )  # Don't suppress exception
 
     with patch("httpx.AsyncClient", return_value=mock_client_instance):
         with pytest.raises(httpx.HTTPStatusError):

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.auth.router import (
     SESSION_COOKIE,
@@ -18,7 +18,6 @@ from app.config import Settings
 from app.db import crud
 from app.db.models import Base, User
 from app.db.session import get_session
-
 
 # Test encryption/decryption
 
@@ -233,8 +232,8 @@ async def test_require_user_with_nonexistent_user():
 @pytest.mark.asyncio
 async def test_login_endpoint_redirects_to_google():
     """Test that /auth/login redirects to Google OAuth."""
-    from httpx import AsyncClient, ASGITransport
     from fastapi import FastAPI
+    from httpx import ASGITransport, AsyncClient
 
     from app.auth.router import router
 
@@ -245,11 +244,14 @@ async def test_login_endpoint_redirects_to_google():
     with patch("app.auth.router.get_settings") as mock_settings:
         mock_settings.return_value.google_client_id = "test-client-id"
         mock_settings.return_value.google_client_secret = "test-secret"
-        mock_settings.return_value.google_redirect_uri = "http://localhost/auth/callback"
+        mock_settings.return_value.google_redirect_uri = (
+            "http://localhost/auth/callback"
+        )
 
         # Mock OAuth client
         with patch("app.auth.router._get_oauth") as mock_oauth:
             from fastapi.responses import RedirectResponse
+
             mock_google = MagicMock()
             mock_google.authorize_redirect = AsyncMock(
                 return_value=RedirectResponse(url="https://accounts.google.com/oauth")
@@ -257,7 +259,9 @@ async def test_login_endpoint_redirects_to_google():
             mock_oauth.return_value.google = mock_google
 
             transport = ASGITransport(app=app)
-            async with AsyncClient(transport=transport, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=transport, base_url="http://test"
+            ) as client:
                 response = await client.get("/auth/login", follow_redirects=False)
 
                 # Should redirect
@@ -268,8 +272,8 @@ async def test_login_endpoint_redirects_to_google():
 @pytest.mark.asyncio
 async def test_logout_endpoint_clears_cookie():
     """Test that /auth/logout clears the session cookie."""
-    from fastapi.testclient import TestClient
     from fastapi import FastAPI
+    from fastapi.testclient import TestClient
 
     from app.auth.router import router
 
@@ -296,8 +300,9 @@ async def test_logout_endpoint_clears_cookie():
 @pytest.mark.asyncio
 async def test_callback_creates_user_and_sets_cookie():
     """Test that OAuth callback creates user and sets session cookie."""
-    from httpx import AsyncClient, ASGITransport
     from fastapi import FastAPI
+    from httpx import ASGITransport, AsyncClient
+
     from app.auth.router import router
 
     # Create test database
@@ -346,11 +351,13 @@ async def test_callback_creates_user_and_sets_cookie():
                 mock_oauth.return_value.google = mock_google
 
                 transport = ASGITransport(app=app)
-                async with AsyncClient(transport=transport, base_url="http://test") as client:
+                async with AsyncClient(
+                    transport=transport, base_url="http://test"
+                ) as client:
                     # Simulate callback with code
                     response = await client.get(
                         "/auth/callback?code=test-code&state=test-state",
-                        follow_redirects=False
+                        follow_redirects=False,
                     )
 
                     # Should redirect to home
@@ -371,8 +378,9 @@ async def test_callback_creates_user_and_sets_cookie():
 @pytest.mark.asyncio
 async def test_me_endpoint_returns_user_info():
     """Test that /auth/me returns current user information."""
-    from httpx import AsyncClient, ASGITransport
     from fastapi import FastAPI
+    from httpx import ASGITransport, AsyncClient
+
     from app.auth.router import router
 
     # Create test database
@@ -415,10 +423,7 @@ async def test_me_endpoint_returns_user_info():
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             # Call /auth/me with cookie
-            response = await client.get(
-                "/auth/me",
-                cookies={SESSION_COOKIE: token}
-            )
+            response = await client.get("/auth/me", cookies={SESSION_COOKIE: token})
 
             assert response.status_code == 200
             data = response.json()

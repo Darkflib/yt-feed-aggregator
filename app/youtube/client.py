@@ -44,19 +44,13 @@ class YouTubeClient:
         async with httpx.AsyncClient(timeout=15) as client:
             while True:
                 # Build request parameters
-                params = {
-                    "part": "snippet",
-                    "mine": "true",
-                    "maxResults": 50
-                }
+                params = {"part": "snippet", "mine": "true", "maxResults": 50}
                 if token:
                     params["pageToken"] = token
 
                 # Make API request
                 r = await client.get(
-                    f"{self.BASE}/subscriptions",
-                    headers=self._headers,
-                    params=params
+                    f"{self.BASE}/subscriptions", headers=self._headers, params=params
                 )
 
                 # Handle expired token
@@ -76,10 +70,12 @@ class YouTubeClient:
 
                     # Only include channel subscriptions
                     if rid.get("kind") == "youtube#channel":
-                        items.append({
-                            "channel_id": rid["channelId"],
-                            "title": snippet.get("title"),
-                        })
+                        items.append(
+                            {
+                                "channel_id": rid["channelId"],
+                                "title": snippet.get("title"),
+                            }
+                        )
 
                 # Check for next page
                 token = data.get("nextPageToken")

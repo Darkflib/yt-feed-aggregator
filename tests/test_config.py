@@ -50,7 +50,9 @@ def test_settings_env_override():
     ):
         settings = Settings()
 
-        assert settings.database_url == "postgresql+asyncpg://user:pass@localhost/testdb"
+        assert (
+            settings.database_url == "postgresql+asyncpg://user:pass@localhost/testdb"
+        )
         assert settings.page_size_default == 50
         assert settings.env == "prod"
 

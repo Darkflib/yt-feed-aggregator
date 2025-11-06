@@ -103,6 +103,6 @@ async def list_user_channels(
     """
     query = select(UserChannel).where(UserChannel.user_id == user_id)
     if active_only:
-        query = query.where(UserChannel.active == True)
+        query = query.where(UserChannel.active)
     result = await db.execute(query.order_by(UserChannel.channel_title))
     return list(result.scalars().all())

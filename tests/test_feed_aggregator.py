@@ -2,8 +2,6 @@
 
 from datetime import datetime, timezone
 
-import pytest
-
 from app.feed import aggregate_feeds, decode_cursor, is_short, make_cursor
 from app.rss.models import FeedItem
 
@@ -55,7 +53,9 @@ class TestCursorOperations:
 
     def test_make_and_decode_cursor(self):
         """Cursor should encode and decode correctly."""
-        item = make_item("video123", datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc))
+        item = make_item(
+            "video123", datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+        )
         cursor = make_cursor(item)
 
         # Cursor should be a non-empty string
@@ -210,7 +210,9 @@ class TestPagination:
         """Basic pagination should work correctly."""
         # Create 5 items with different timestamps
         items = [
-            make_item(f"video{i}", datetime(2024, 1, i + 1, 12, 0, 0, tzinfo=timezone.utc))
+            make_item(
+                f"video{i}", datetime(2024, 1, i + 1, 12, 0, 0, tzinfo=timezone.utc)
+            )
             for i in range(5)
         ]
 
@@ -246,7 +248,9 @@ class TestPagination:
     def test_no_next_cursor_when_exact_limit(self):
         """No next cursor when items exactly match limit."""
         items = [
-            make_item(f"video{i}", datetime(2024, 1, i + 1, 12, 0, 0, tzinfo=timezone.utc))
+            make_item(
+                f"video{i}", datetime(2024, 1, i + 1, 12, 0, 0, tzinfo=timezone.utc)
+            )
             for i in range(3)
         ]
 
@@ -257,7 +261,9 @@ class TestPagination:
     def test_next_cursor_when_more_items(self):
         """Next cursor should be present when more items exist."""
         items = [
-            make_item(f"video{i}", datetime(2024, 1, i + 1, 12, 0, 0, tzinfo=timezone.utc))
+            make_item(
+                f"video{i}", datetime(2024, 1, i + 1, 12, 0, 0, tzinfo=timezone.utc)
+            )
             for i in range(5)
         ]
 
@@ -268,7 +274,9 @@ class TestPagination:
     def test_deterministic_pagination(self):
         """Same cursor should always return same results."""
         items = [
-            make_item(f"video{i}", datetime(2024, 1, i + 1, 12, 0, 0, tzinfo=timezone.utc))
+            make_item(
+                f"video{i}", datetime(2024, 1, i + 1, 12, 0, 0, tzinfo=timezone.utc)
+            )
             for i in range(10)
         ]
 
@@ -295,11 +303,31 @@ class TestEdgeCases:
     def test_pagination_with_shorts_filtered(self):
         """Pagination should work correctly when shorts are filtered."""
         items = [
-            make_item("video0", datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc), is_short=False),
-            make_item("short1", datetime(2024, 1, 2, 12, 0, 0, tzinfo=timezone.utc), is_short=True),
-            make_item("video2", datetime(2024, 1, 3, 12, 0, 0, tzinfo=timezone.utc), is_short=False),
-            make_item("short3", datetime(2024, 1, 4, 12, 0, 0, tzinfo=timezone.utc), is_short=True),
-            make_item("video4", datetime(2024, 1, 5, 12, 0, 0, tzinfo=timezone.utc), is_short=False),
+            make_item(
+                "video0",
+                datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+                is_short=False,
+            ),
+            make_item(
+                "short1",
+                datetime(2024, 1, 2, 12, 0, 0, tzinfo=timezone.utc),
+                is_short=True,
+            ),
+            make_item(
+                "video2",
+                datetime(2024, 1, 3, 12, 0, 0, tzinfo=timezone.utc),
+                is_short=False,
+            ),
+            make_item(
+                "short3",
+                datetime(2024, 1, 4, 12, 0, 0, tzinfo=timezone.utc),
+                is_short=True,
+            ),
+            make_item(
+                "video4",
+                datetime(2024, 1, 5, 12, 0, 0, tzinfo=timezone.utc),
+                is_short=False,
+            ),
         ]
 
         # First page - should only have regular videos
@@ -312,7 +340,9 @@ class TestEdgeCases:
         assert result["next_cursor"] is not None
 
         # Second page
-        result = aggregate_feeds([items], limit=2, cursor=result["next_cursor"], include_shorts=False)
+        result = aggregate_feeds(
+            [items], limit=2, cursor=result["next_cursor"], include_shorts=False
+        )
         page2 = result["items"]
 
         assert len(page2) == 1
@@ -350,7 +380,9 @@ class TestEdgeCases:
         items = [
             make_item(
                 f"video{i:03d}",
-                datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc).replace(hour=i % 24),
+                datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc).replace(
+                    hour=i % 24
+                ),
             )
             for i in range(100)
         ]
@@ -379,7 +411,11 @@ class TestEdgeCases:
         """Cursor pagination should work when filtering leaves empty results."""
         # All items are shorts
         items = [
-            make_item(f"short{i}", datetime(2024, 1, i + 1, 12, 0, 0, tzinfo=timezone.utc), is_short=True)
+            make_item(
+                f"short{i}",
+                datetime(2024, 1, i + 1, 12, 0, 0, tzinfo=timezone.utc),
+                is_short=True,
+            )
             for i in range(5)
         ]
 

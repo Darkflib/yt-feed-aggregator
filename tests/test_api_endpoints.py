@@ -1,7 +1,6 @@
 """Tests for API endpoints."""
 
 import base64
-import json
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -9,7 +8,7 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.api import feed_router, health_router, me_router, subscriptions_router
 from app.auth.router import SESSION_COOKIE, _create_session_token
@@ -153,9 +152,7 @@ async def test_api_me_returns_401_when_not_authenticated(test_app, test_db):
 
 
 @pytest.mark.asyncio
-async def test_subscriptions_refresh_requires_authentication(
-    test_app, test_db
-):
+async def test_subscriptions_refresh_requires_authentication(test_app, test_db):
     """Test /api/subscriptions/refresh requires authentication."""
     test_app.dependency_overrides[get_session] = override_get_session(test_db)
 
@@ -197,8 +194,7 @@ async def test_subscriptions_list_returns_user_channels(
         transport = ASGITransport(app=test_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             response = await client.get(
-                "/api/subscriptions",
-                cookies={SESSION_COOKIE: token}
+                "/api/subscriptions", cookies={SESSION_COOKIE: token}
             )
 
             assert response.status_code == 200
@@ -248,23 +244,22 @@ async def test_feed_merges_and_paginates_correctly(
         yield mock_redis
 
     test_app.dependency_overrides[get_session] = override_get_session(test_db)
-    test_app.dependency_overrides[
-        "app.api.dependencies.get_redis"
-    ] = mock_get_redis
+    test_app.dependency_overrides["app.api.dependencies.get_redis"] = mock_get_redis
 
     with patch("app.auth.router.get_settings", return_value=mock_settings):
         with patch("app.api.routes_feed.get_settings", return_value=mock_settings):
             with patch(
                 "app.api.routes_feed.fetch_and_cache_feed",
-                new=AsyncMock(return_value=feed_items)
+                new=AsyncMock(return_value=feed_items),
             ):
                 token = _create_session_token(test_user.id)
 
                 transport = ASGITransport(app=test_app)
-                async with AsyncClient(transport=transport, base_url="http://test") as client:
+                async with AsyncClient(
+                    transport=transport, base_url="http://test"
+                ) as client:
                     response = await client.get(
-                        "/api/feed?limit=10",
-                        cookies={SESSION_COOKIE: token}
+                        "/api/feed?limit=10", cookies={SESSION_COOKIE: token}
                     )
 
                     assert response.status_code == 200
@@ -318,23 +313,22 @@ async def test_feed_filters_to_single_channel(
         yield mock_redis
 
     test_app.dependency_overrides[get_session] = override_get_session(test_db)
-    test_app.dependency_overrides[
-        "app.api.dependencies.get_redis"
-    ] = mock_get_redis
+    test_app.dependency_overrides["app.api.dependencies.get_redis"] = mock_get_redis
 
     with patch("app.auth.router.get_settings", return_value=mock_settings):
         with patch("app.api.routes_feed.get_settings", return_value=mock_settings):
             with patch(
                 "app.api.routes_feed.fetch_and_cache_feed",
-                new=AsyncMock(return_value=feed_items_channel1)
+                new=AsyncMock(return_value=feed_items_channel1),
             ):
                 token = _create_session_token(test_user.id)
 
                 transport = ASGITransport(app=test_app)
-                async with AsyncClient(transport=transport, base_url="http://test") as client:
+                async with AsyncClient(
+                    transport=transport, base_url="http://test"
+                ) as client:
                     response = await client.get(
-                        "/api/feed?channel_id=UC111",
-                        cookies={SESSION_COOKIE: token}
+                        "/api/feed?channel_id=UC111", cookies={SESSION_COOKIE: token}
                     )
 
                     assert response.status_code == 200
@@ -378,24 +372,23 @@ async def test_feed_respects_limit_parameter(
         yield mock_redis
 
     test_app.dependency_overrides[get_session] = override_get_session(test_db)
-    test_app.dependency_overrides[
-        "app.api.dependencies.get_redis"
-    ] = mock_get_redis
+    test_app.dependency_overrides["app.api.dependencies.get_redis"] = mock_get_redis
 
     with patch("app.auth.router.get_settings", return_value=mock_settings):
         with patch("app.api.routes_feed.get_settings", return_value=mock_settings):
             with patch(
                 "app.api.routes_feed.fetch_and_cache_feed",
-                new=AsyncMock(return_value=feed_items)
+                new=AsyncMock(return_value=feed_items),
             ):
                 token = _create_session_token(test_user.id)
 
                 transport = ASGITransport(app=test_app)
-                async with AsyncClient(transport=transport, base_url="http://test") as client:
+                async with AsyncClient(
+                    transport=transport, base_url="http://test"
+                ) as client:
                     # Test with custom limit
                     response = await client.get(
-                        "/api/feed?limit=15",
-                        cookies={SESSION_COOKIE: token}
+                        "/api/feed?limit=15", cookies={SESSION_COOKIE: token}
                     )
 
                     assert response.status_code == 200
