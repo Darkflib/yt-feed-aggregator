@@ -1,0 +1,26 @@
+[Unit]
+Description=Update YouTube Aggregator container if new version available
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/yt-aggregator-update.sh
+
+# Run as root (required for podman operations)
+User=root
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+# Environment
+Environment="IMAGE=ghcr.io/darkflib/yt-feed-aggregator:latest"
+Environment="CONTAINER_NAME=yt-aggregator"
+
+# Security (adjust as needed)
+PrivateTmp=yes
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=Check for YouTube Aggregator container updates
+Requires=yt-aggregator-update.service
+
+[Timer]
+# Check every 15 minutes
+OnCalendar=*:0/15
+
+# Run on boot if missed
+Persistent=true
+
+# Randomize start time by up to 5 minutes to avoid thundering herd
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

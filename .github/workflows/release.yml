@@ -1,0 +1,226 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: darkflib/yt-feed-aggregator
+
+jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version tag
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG="${{ github.event.inputs.version }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid version tag format. Expected: v*.*.* (e.g., v1.0.0)"
+            exit 1
+          fi
+
+          echo "VERSION_TAG=$TAG" >> $GITHUB_ENV
+          echo "Release version: $TAG"
+
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: validate
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system -r pyproject.toml
+          uv pip install --system pytest pytest-asyncio
+
+      - name: Run tests
+        env:
+          YT_APP_SECRET_KEY: test-secret-key-for-ci
+          YT_TOKEN_ENC_KEY: test-token-enc-key-12345678901234567890123456789012
+          YT_GOOGLE_CLIENT_ID: test-client-id
+          YT_GOOGLE_CLIENT_SECRET: test-client-secret
+          YT_GOOGLE_REDIRECT_URI: http://localhost:8080/auth/callback
+          YT_DATABASE_URL: sqlite+aiosqlite:///:memory:
+          YT_REDIS_URL: redis://localhost:6379/0
+        run: pytest -v
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+  build-release-container:
+    name: Build and Push Release Container
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set version tag
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "VERSION_TAG=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          else
+            echo "VERSION_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version number
+        id: version
+        run: |
+          VERSION="${{ env.VERSION_TAG }}"
+          VERSION_NO_V="${VERSION#v}"
+          MAJOR=$(echo $VERSION_NO_V | cut -d. -f1)
+          MINOR=$(echo $VERSION_NO_V | cut -d. -f2)
+
+          echo "version=$VERSION_NO_V" >> $GITHUB_OUTPUT
+          echo "major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "minor=$MINOR" >> $GITHUB_OUTPUT
+
+      - name: Build and push container image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Containerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION_TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.major }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          labels: |
+            org.opencontainers.image.title=YouTube Feed Aggregator
+            org.opencontainers.image.description=Clean YouTube subscription feed aggregator
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION_TAG }}
+          format: spdx-json
+          output-file: sbom-${{ env.VERSION_TAG }}.spdx.json
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            # Extract changelog for this version
+            sed -n "/## \[${{ env.VERSION_TAG }}\]/,/## \[/p" CHANGELOG.md | sed '$d' > release-notes.md
+            if [ ! -s release-notes.md ]; then
+              echo "### Changes in ${{ env.VERSION_TAG }}" > release-notes.md
+              git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> release-notes.md
+            fi
+          else
+            echo "### Changes in ${{ env.VERSION_TAG }}" > release-notes.md
+            git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")..HEAD >> release-notes.md 2>/dev/null || echo "Initial release" >> release-notes.md
+          fi
+
+          cat release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.VERSION_TAG }}
+          name: Release ${{ env.VERSION_TAG }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+          files: |
+            sbom-${{ env.VERSION_TAG }}.spdx.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: build-release-container
+    if: success()
+
+    steps:
+      - name: Release Summary
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION_TAG="${{ github.event.inputs.version }}"
+          else
+            VERSION_TAG="${{ github.ref_name }}"
+          fi
+
+          echo "### Release $VERSION_TAG Published Successfully! :tada:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** $VERSION_TAG" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Container Images:**" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION_TAG\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Pull commands:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "podman pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION_TAG" >> $GITHUB_STEP_SUMMARY
+          echo "podman pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "[View Release](${{ github.server_url }}/${{ github.repository }}/releases/tag/$VERSION_TAG)" >> $GITHUB_STEP_SUMMARY

@@ -1,7 +1,13 @@
 # 🧭 yt-simple
 
+[![CI/CD Pipeline](https://github.com/darkflib/yt-feed-aggregator/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/darkflib/yt-feed-aggregator/actions/workflows/ci.yml)
+[![Release](https://github.com/darkflib/yt-feed-aggregator/workflows/Release/badge.svg)](https://github.com/darkflib/yt-feed-aggregator/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Container](https://ghcr-badge.egpl.dev/darkflib/yt-feed-aggregator/latest_tag?color=%2344cc11&ignore=latest&label=container&trim=)](https://github.com/darkflib/yt-feed-aggregator/pkgs/container/yt-feed-aggregator)
+
 **Purpose:**
-yt-simple is a small web utility that removes the noise from YouTube’s recommendation feed.
+yt-simple is a small web utility that removes the noise from YouTube's recommendation feed.
 It logs into your Google account, fetches your **subscriptions**, retrieves their **RSS feeds**, and presents a clean, paginated, **dark-mode** interface showing only the newest videos — no Shorts, no recommendations, no clutter.
 
 ---
@@ -190,10 +196,50 @@ location / {
 
 ## 🔄 CI/CD Flow
 
-1. **Commit → Push to main**
-2. GitHub Actions runs lint, tests, and builds image.
-3. Image published to GHCR (`ghcr.io/youruser/yt-simple:latest`).
-4. Podman host watcher pulls new digest and restarts container.
+The project includes a comprehensive CI/CD pipeline via GitHub Actions:
+
+### Pipeline Stages
+
+1. **Lint & Type Check**
+   - Python: `ruff` (linting), `mypy` (type checking)
+   - Frontend: `ESLint`, `TypeScript` type checking
+
+2. **Test**
+   - Backend: `pytest` with coverage reporting
+   - Tested against Python 3.12 and 3.13
+   - Uses Redis and PostgreSQL service containers
+
+3. **Build**
+   - Frontend: Vite build validation
+   - Container: Multi-platform (amd64, arm64) build
+
+4. **Security**
+   - CodeQL SAST scanning
+   - Container vulnerability scanning with Trivy
+   - SBOM generation for releases
+
+5. **Publish**
+   - Pushes to GitHub Container Registry (GHCR)
+   - Tags: SHA, branch name, version, and `latest`
+   - Image: `ghcr.io/darkflib/yt-feed-aggregator:latest`
+
+### Automated Releases
+
+Version tags (`v*.*.*`) trigger the release workflow:
+- Builds and pushes versioned container images
+- Generates changelog from git history or CHANGELOG.md
+- Creates GitHub release with SBOM artifacts
+- Multi-platform container images (amd64, arm64)
+
+### Dependency Management
+
+Dependabot automatically:
+- Updates Python dependencies weekly
+- Updates npm packages weekly
+- Updates GitHub Actions weekly
+- Groups related updates for easier review
+
+For more details, see [CI.md](CI.md).
 
 ---
 
