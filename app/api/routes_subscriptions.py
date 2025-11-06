@@ -1,11 +1,10 @@
 """Subscription management endpoints for the YouTube Feed Aggregator API."""
 
-import base64
-
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.crypto import validate_encryption_key
 from app.auth.router import require_user
 from app.auth.security import decrypt_refresh_token
 from app.config import get_settings
@@ -78,20 +77,10 @@ async def refresh_subscriptions(
         )
 
     # Decrypt the refresh token
-    enc_key = settings.token_enc_key
-    if isinstance(enc_key, str):
-        # Try base64 decode first
-        try:
-            enc_key_bytes = base64.b64decode(enc_key)
-        except Exception:
-            # If not base64, encode as UTF-8 and pad/truncate to 32 bytes
-            enc_key_bytes = enc_key.encode("utf-8")
-            if len(enc_key_bytes) < 32:
-                enc_key_bytes = enc_key_bytes.ljust(32, b"\x00")
-            elif len(enc_key_bytes) > 32:
-                enc_key_bytes = enc_key_bytes[:32]
-    else:
-        enc_key_bytes = enc_key
+    try:
+        enc_key_bytes = validate_encryption_key(settings.token_enc_key)
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=f"Invalid encryption key configuration: {e}")
 
     try:
         refresh_token = decrypt_refresh_token(enc_key_bytes, user.refresh_token_enc)

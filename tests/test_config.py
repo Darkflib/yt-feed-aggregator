@@ -59,14 +59,26 @@ def test_settings_env_override():
 
 def test_settings_validation_error():
     """Test that missing required fields raise validation error."""
+    # Temporarily disable .env file loading for this test
     with patch.dict(os.environ, {}, clear=True):
-        with pytest.raises(ValidationError) as exc_info:
-            Settings()
+        # Create a test Settings class that doesn't read from .env
+        from pydantic_settings import SettingsConfigDict
 
-        errors = exc_info.value.errors()
-        error_fields = {e["loc"][0] for e in errors}
-        assert "app_secret_key" in error_fields
-        assert "token_enc_key" in error_fields
+        original_config = Settings.model_config
+        try:
+            # Override config to not read from .env file
+            Settings.model_config = SettingsConfigDict(env_prefix="YT_", extra="ignore")
+
+            with pytest.raises(ValidationError) as exc_info:
+                Settings()
+
+            errors = exc_info.value.errors()
+            error_fields = {e["loc"][0] for e in errors}
+            assert "app_secret_key" in error_fields
+            assert "token_enc_key" in error_fields
+        finally:
+            # Restore original config
+            Settings.model_config = original_config
 
 
 def test_get_settings_singleton():

@@ -1,6 +1,5 @@
 """FastAPI router for Google OAuth authentication."""
 
-import base64
 import time
 from typing import Annotated
 
@@ -9,6 +8,7 @@ from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.crypto import validate_encryption_key
 from app.auth.security import encrypt_refresh_token
 from app.config import get_settings
 from app.db import crud
@@ -139,22 +139,11 @@ async def callback(
     refresh_token = token.get("refresh_token")
     refresh_token_enc = None
     if refresh_token:
-        # Decode the token_enc_key from base64 if needed, or use as bytes
-        enc_key = settings.token_enc_key
-        # Ensure key is bytes and 32 bytes long
-        if isinstance(enc_key, str):
-            # Try base64 decode first
-            try:
-                enc_key_bytes = base64.b64decode(enc_key)
-            except Exception:
-                # If not base64, encode as UTF-8 and pad/truncate to 32 bytes
-                enc_key_bytes = enc_key.encode("utf-8")
-                if len(enc_key_bytes) < 32:
-                    enc_key_bytes = enc_key_bytes.ljust(32, b"\x00")
-                elif len(enc_key_bytes) > 32:
-                    enc_key_bytes = enc_key_bytes[:32]
-        else:
-            enc_key_bytes = enc_key
+        # Validate and convert encryption key (must be 32 bytes, base64-encoded)
+        try:
+            enc_key_bytes = validate_encryption_key(settings.token_enc_key)
+        except ValueError as e:
+            raise HTTPException(status_code=500, detail=f"Invalid encryption key configuration: {e}")
 
         refresh_token_enc = encrypt_refresh_token(enc_key_bytes, refresh_token)
 
