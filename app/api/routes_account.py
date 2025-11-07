@@ -255,12 +255,18 @@ async def download_export(
         raise HTTPException(status_code=400, detail="Invalid filename")
 
     # Parse filename to extract user_id and job_id
+    # Expected format: export_{user_id}_{timestamp}_{job_id}.zip
     parts = filename.replace(".zip", "").split("_")
-    if len(parts) < 4 or parts[0] != "export":
+    if len(parts) != 4 or parts[0] != "export":
         raise HTTPException(status_code=400, detail="Invalid filename format")
 
     file_user_id = parts[1]
+    timestamp = parts[2]
     job_id = parts[3]
+
+    # Validate that all required parts are not empty
+    if not file_user_id or not timestamp or not job_id:
+        raise HTTPException(status_code=400, detail="Invalid filename format")
 
     # Verify the file belongs to the current user
     if file_user_id != user.id:
@@ -269,11 +275,7 @@ async def download_export(
     # Verify the job exists and belongs to the user
     job_key = f"yt:export:job:{job_id}"
     job_data = await redis.hgetall(job_key)
-    if not job_data:
-        raise HTTPException(status_code=403, detail="Invalid or unauthorized export job")
-    
-    job_user_id = job_data.get(b"user_id", b"").decode("utf-8")
-    if job_user_id != user.id:
+    if not job_data or job_data.get(b"user_id", b"").decode("utf-8") != user.id:
         raise HTTPException(status_code=403, detail="Invalid or unauthorized export job")
 
     # Check if file exists in storage
