@@ -22,9 +22,11 @@ It logs into your Google account, fetches your **subscriptions**, retrieves thei
 | 🧮 **Unified Timeline**   | Merges all videos, sorted chronologically, excluding Shorts.     |
 | ⚡ **Pagination**          | Cursor-based paging for infinite scrolling or next/prev buttons. |
 | 👁️ **Watched Videos**     | Track watched videos, dim watched items, filter to hide watched. |
+| 📦 **Data Export**        | Export all your data (profile, subscriptions, watch history).    |
+| 🗑️ **Account Deletion**   | Two-step account deletion with email confirmation.               |
 | 🌑 **Clean UI**           | SPA with grid/list toggle, channel sidebar, dark mode default.   |
 | 🧠 **Cache-Aware**        | Redis caching for RSS and oEmbed data.                           |
-| 🐳 **Containerized**      | Single image build for Podman or Docker.                         |
+| 🐳 **Containerized**      | Single image build for Podman or Docker, worker mode supported.  |
 
 ---
 
@@ -177,10 +179,31 @@ Use `pytest --disable-warnings -v` for detailed coverage.
 
 ```bash
 podman build -t yt-simple .
+
+# Run web server
 podman run -d -p 8080:8080 \
   --env-file=.env \
   --name yt-simple \
-  yt-simple
+  yt-simple web
+
+# Run export worker
+podman run -d \
+  --env-file=.env \
+  --name yt-simple-worker \
+  yt-simple worker
+```
+
+### Using Docker Compose
+
+```bash
+# Start all services (web + worker + nginx + redis + postgres)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Scale workers
+docker-compose up -d --scale worker=3
 ```
 
 ### Health check
