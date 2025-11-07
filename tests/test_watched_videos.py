@@ -45,34 +45,23 @@ async def db_engine():
 
 
 @pytest_asyncio.fixture
-async def db_session(db_engine):
+async def db_sessionmaker(db_engine):
+    """Yield an async sessionmaker bound to the test engine."""
+    sessionmaker = async_sessionmaker(db_engine, expire_on_commit=False)
+    yield sessionmaker
+
+
+@pytest_asyncio.fixture
+async def db_session(db_sessionmaker):
     """Create a database session for testing."""
-    async_session = async_sessionmaker(db_engine, expire_on_commit=False)
-    async with async_session() as session:
+    async with db_sessionmaker() as session:
         yield session
 
 
 @pytest_asyncio.fixture
-async def test_db():
-    """Create an in-memory test database."""
-    engine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:",
-        future=True,
-        connect_args={"check_same_thread": False},
-    )
-
-    # Enable foreign key support for SQLite
-    async with engine.begin() as conn:
-        await conn.execute(text("PRAGMA foreign_keys=ON"))
-        await conn.run_sync(Base.metadata.create_all)
-
-    sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
-
-    yield sessionmaker
-
-    await engine.dispose()
-
-
+async def test_db(db_sessionmaker):
+    """Yield the async sessionmaker for API tests."""
+    yield db_sessionmaker
 @pytest_asyncio.fixture
 async def test_user(test_db):
     """Create a test user in the database."""
