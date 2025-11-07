@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Entrypoint script for YouTube Feed Aggregator container
 # Supports running as either web server or export worker
 

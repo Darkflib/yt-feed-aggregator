@@ -3,8 +3,6 @@
 import logging
 import secrets
 import time
-from typing import Annotated
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from redis.asyncio import Redis
@@ -15,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_redis
 from app.auth.router import require_user
 from app.config import get_settings
-from app.db.crud import delete_user_account, get_user_export_data
+from app.db.crud import delete_user_account
 from app.db.models import User
 from app.db.session import get_session
 from app.email_service import send_account_deletion_email
@@ -68,7 +66,7 @@ async def request_data_export(
     }
 
     # Store job metadata (24 hour TTL)
-    await redis.hset(job_key, mapping=job_data)  # type: ignore
+    await redis.hset(job_key, mapping=job_data)  # type: ignore[arg-type]
     await redis.expire(job_key, 86400)  # 24 hours
 
     # Add job to queue (FIFO)
@@ -105,7 +103,7 @@ async def request_account_deletion(
     # Build confirmation link
     settings = get_settings()
     # This endpoint is accessed directly (not through frontend), so use backend URL pattern
-    confirmation_link = f"{settings.frontend_origin}/api/account/delete/confirm/{token}"
+    confirmation_link = f"{settings.export_url_base}/api/account/delete/confirm/{token}"
 
     # Send confirmation email
     try:
@@ -256,16 +254,27 @@ async def download_export(
     if not filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Invalid filename")
 
-    # Parse filename to extract user_id
+    # Parse filename to extract user_id and job_id
     parts = filename.replace(".zip", "").split("_")
     if len(parts) < 4 or parts[0] != "export":
         raise HTTPException(status_code=400, detail="Invalid filename format")
 
     file_user_id = parts[1]
+    job_id = parts[3]
 
     # Verify the file belongs to the current user
     if file_user_id != user.id:
         raise HTTPException(status_code=403, detail="Access denied")
+
+    # Verify the job exists and belongs to the user
+    job_key = f"yt:export:job:{job_id}"
+    job_data = await redis.hgetall(job_key)
+    if not job_data:
+        raise HTTPException(status_code=403, detail="Invalid or unauthorized export job")
+    
+    job_user_id = job_data.get(b"user_id", b"").decode("utf-8")
+    if job_user_id != user.id:
+        raise HTTPException(status_code=403, detail="Invalid or unauthorized export job")
 
     # Check if file exists in storage
     if isinstance(storage, LocalStorageBackend):

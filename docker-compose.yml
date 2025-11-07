@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: yt_feed
       POSTGRES_USER: yt_user
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -35,7 +35,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - YT_DATABASE_URL=postgresql+asyncpg://yt_user:changeme@postgres:5432/yt_feed
+      - YT_DATABASE_URL=postgresql+asyncpg://yt_user:${POSTGRES_PASSWORD:-changeme}@postgres:5432/yt_feed
       - YT_REDIS_URL=redis://redis:6379/0
       - YT_EXPORT_URL_BASE=http://localhost:8080
     env_file:
@@ -59,7 +59,7 @@ services:
     build: .
     command: ["worker"]
     environment:
-      - YT_DATABASE_URL=postgresql+asyncpg://yt_user:changeme@postgres:5432/yt_feed
+      - YT_DATABASE_URL=postgresql+asyncpg://yt_user:${POSTGRES_PASSWORD:-changeme}@postgres:5432/yt_feed
       - YT_REDIS_URL=redis://redis:6379/0
       - YT_EXPORT_URL_BASE=http://localhost:8080
     env_file:

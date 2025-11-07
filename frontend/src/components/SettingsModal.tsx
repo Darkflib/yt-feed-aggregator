@@ -149,6 +149,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <button
                 onClick={handleExportData}
                 disabled={loading !== null}
+                aria-disabled={loading !== null}
+                aria-busy={loading === 'export'}
                 className="w-full flex items-center justify-between p-4 bg-neutral-750 rounded-xl hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center gap-3">
@@ -195,6 +197,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={loading !== null}
+                aria-disabled={loading !== null}
                 className="w-full flex items-center justify-between p-4 bg-neutral-750 rounded-xl hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center gap-3">
@@ -294,6 +297,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={loading === 'delete'}
+                  aria-disabled={loading === 'delete'}
                   className="flex-1 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
                 >
                   Cancel
@@ -301,6 +305,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <button
                   onClick={handleDeleteAccount}
                   disabled={loading === 'delete'}
+                  aria-disabled={loading === 'delete'}
+                  aria-busy={loading === 'delete'}
                   className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading === 'delete' ? (
