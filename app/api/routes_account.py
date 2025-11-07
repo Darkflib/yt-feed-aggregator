@@ -4,6 +4,7 @@ import logging
 import secrets
 import time
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from redis.asyncio import Redis
 from slowapi import Limiter
@@ -11,7 +12,7 @@ from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_redis
-from app.auth.router import require_user
+from app.auth.router import SESSION_COOKIE, require_user
 from app.config import get_settings
 from app.db.crud import delete_user_account
 from app.db.models import User
@@ -137,14 +138,14 @@ async def request_account_deletion(
     )
 
 
-@router.get("/delete/confirm/{token}", response_model=DeleteResponse)
+@router.get("/delete/confirm/{token}")
 @limiter.limit("10/hour")
 async def confirm_account_deletion(
     request: Request,
     token: str,
     redis: Redis = Depends(get_redis),
     db: AsyncSession = Depends(get_session),
-) -> DeleteResponse:
+):
     """
     Confirm account deletion.
 
@@ -179,12 +180,22 @@ async def confirm_account_deletion(
     # Remove token from Redis
     await redis.delete(token_key)
 
-    # TODO: Clear session cookie
-    # This should be handled by the frontend redirecting to /auth/logout
-
-    return DeleteResponse(
-        message="Your account has been permanently deleted. All your data has been removed from our systems."
+    # Clear session cookie to log the user out after account deletion
+    settings = get_settings()
+    response = JSONResponse(
+        content={
+            "message": "Your account has been permanently deleted. All your data has been removed from our systems."
+        }
     )
+    response.delete_cookie(
+        key=SESSION_COOKIE,
+        path="/",
+        domain=None,
+        httponly=True,
+        secure=settings.env == "prod",
+        samesite="lax",
+    )
+    return response
 
 
 @router.get("/export/status/{job_id}")
