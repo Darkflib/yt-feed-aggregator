@@ -1,7 +1,7 @@
 """Watched videos endpoints for the YouTube Feed Aggregator API."""
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,8 +18,8 @@ limiter = Limiter(key_func=get_remote_address)
 class MarkWatchedRequest(BaseModel):
     """Request model for marking a video as watched."""
 
-    video_id: str
-    channel_id: str
+    video_id: str = Field(min_length=1, pattern=r"^\S+$", description="YouTube video ID")
+    channel_id: str = Field(min_length=1, pattern=r"^\S+$", description="YouTube channel ID")
 
 
 class WatchedVideoResponse(BaseModel):
@@ -57,16 +57,7 @@ async def mark_video_watched(
 
     Returns:
         Watched video details including video_id, channel_id, and watched_at timestamp
-
-    Raises:
-        HTTPException: 400 if video_id or channel_id is empty
     """
-    # Validate input
-    if not body.video_id or not body.video_id.strip():
-        raise HTTPException(status_code=400, detail="video_id cannot be empty")
-    if not body.channel_id or not body.channel_id.strip():
-        raise HTTPException(status_code=400, detail="channel_id cannot be empty")
-
     watched = await crud.mark_video_watched(db, user.id, body.video_id, body.channel_id)
 
     return WatchedVideoResponse(

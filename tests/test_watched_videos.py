@@ -393,19 +393,19 @@ async def test_mark_video_watched_validates_input(
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             client.cookies.set(SESSION_COOKIE, token)
 
-            # Test empty video_id
+            # Test empty video_id (Pydantic validation returns 422)
             response = await client.post(
                 "/api/watched",
                 json={"video_id": "", "channel_id": "channel456"},
             )
-            assert response.status_code == 400
+            assert response.status_code == 422
 
-            # Test empty channel_id
+            # Test empty channel_id (Pydantic validation returns 422)
             response = await client.post(
                 "/api/watched",
                 json={"video_id": "video123", "channel_id": ""},
             )
-            assert response.status_code == 400
+            assert response.status_code == 422
 
 
 @pytest.mark.asyncio
