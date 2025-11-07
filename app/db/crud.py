@@ -185,3 +185,86 @@ async def get_watched_video_ids(db: AsyncSession, user_id: str) -> set[str]:
         select(WatchedVideo.video_id).where(WatchedVideo.user_id == user_id)
     )
     return set(result.scalars().all())
+
+
+async def get_user_export_data(
+    db: AsyncSession, user_id: str
+) -> dict[str, dict | list]:
+    """Get all user data for export.
+
+    Args:
+        db: Database session
+        user_id: The user's ID
+
+    Returns:
+        Dictionary with user profile, subscriptions, and watched videos
+        Note: Encrypted refresh token is excluded for security
+    """
+    # Get user profile
+    user = await get_user_by_id(db, user_id)
+    if not user:
+        return {"profile": {}, "subscriptions": [], "watched_videos": []}
+
+    # Get subscriptions
+    channels = await list_user_channels(db, user_id, active_only=False)
+
+    # Get watched videos
+    result = await db.execute(
+        select(WatchedVideo)
+        .where(WatchedVideo.user_id == user_id)
+        .order_by(WatchedVideo.watched_at.desc())
+    )
+    watched_videos = list(result.scalars().all())
+
+    return {
+        "profile": {
+            "id": user.id,
+            "google_sub": user.google_sub,
+            "email": user.email,
+            "display_name": user.display_name,
+            "avatar_url": user.avatar_url,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+        },
+        "subscriptions": [
+            {
+                "id": ch.id,
+                "channel_id": ch.channel_id,
+                "channel_title": ch.channel_title,
+                "channel_custom_url": ch.channel_custom_url,
+                "active": ch.active,
+                "added_at": ch.added_at.isoformat() if ch.added_at else None,
+            }
+            for ch in channels
+        ],
+        "watched_videos": [
+            {
+                "id": wv.id,
+                "video_id": wv.video_id,
+                "channel_id": wv.channel_id,
+                "watched_at": wv.watched_at.isoformat() if wv.watched_at else None,
+                "created_at": wv.created_at.isoformat() if wv.created_at else None,
+                "updated_at": wv.updated_at.isoformat() if wv.updated_at else None,
+            }
+            for wv in watched_videos
+        ],
+    }
+
+
+async def delete_user_account(db: AsyncSession, user_id: str) -> bool:
+    """Delete a user account and all related data.
+
+    This will cascade delete:
+    - All user_channels (via ondelete="CASCADE")
+    - All watched_videos (via ondelete="CASCADE")
+
+    Args:
+        db: Database session
+        user_id: The user's ID
+
+    Returns:
+        True if the user was deleted, False if the user wasn't found
+    """
+    result = await db.execute(delete(User).where(User.id == user_id))
+    await db.commit()
+    return result.rowcount > 0
