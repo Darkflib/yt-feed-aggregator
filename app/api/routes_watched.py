@@ -1,6 +1,8 @@
 """Watched videos endpoints for the YouTube Feed Aggregator API."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -14,18 +16,21 @@ from app.db.session import get_session
 router = APIRouter(prefix="/api/watched", tags=["watched"])
 limiter = Limiter(key_func=get_remote_address)
 
+# Shared validation pattern for YouTube IDs
+YOUTUBE_ID_PATTERN = r"^[a-zA-Z0-9_-]+$"
+
 
 class MarkWatchedRequest(BaseModel):
     """Request model for marking a video as watched."""
 
     video_id: str = Field(
         min_length=1,
-        pattern=r"^[a-zA-Z0-9_-]+$",
+        pattern=YOUTUBE_ID_PATTERN,
         description="YouTube video ID",
     )
     channel_id: str = Field(
         min_length=1,
-        pattern=r"^[a-zA-Z0-9_-]+$",
+        pattern=YOUTUBE_ID_PATTERN,
         description="YouTube channel ID",
     )
 
@@ -85,7 +90,14 @@ async def mark_video_watched(
 @limiter.limit("60/minute")
 async def unmark_video_watched(
     request: Request,
-    video_id: str,
+    video_id: Annotated[
+        str,
+        Path(
+            min_length=1,
+            pattern=YOUTUBE_ID_PATTERN,
+            description="YouTube video ID to unmark",
+        ),
+    ],
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_session),
 ):
@@ -93,6 +105,9 @@ async def unmark_video_watched(
     Unmark a video as watched for the current user.
 
     This endpoint allows users to remove a video from their watched list.
+
+    Input validation is handled by FastAPI Path constraints. Invalid input
+    will result in a 422 validation error.
 
     Rate limit: 60 requests per minute per IP.
 
@@ -104,10 +119,8 @@ async def unmark_video_watched(
 
     Raises:
         HTTPException: 404 if the video was not marked as watched
+        HTTPException: 422 if video_id is invalid
     """
-    if not video_id.strip():
-        raise HTTPException(status_code=400, detail="video_id cannot be empty")
-
     success = await crud.unmark_video_watched(db, user.id, video_id)
 
     if not success:
