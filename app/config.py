@@ -37,6 +37,27 @@ class Settings(BaseSettings):
     # CORS
     frontend_origin: str = "http://localhost:5173"
 
+    # Mailgun (for transactional emails)
+    mailgun_api_key: str = Field(default="")
+    mailgun_domain: str = Field(default="")
+    mailgun_from_email: str = Field(default="noreply@example.com")
+
+    # Export Storage Configuration
+    export_storage_backend: str = Field(
+        default="local", pattern="^(local|gcs)$"
+    )  # local or gcs
+    export_local_path: str = Field(default="./exports")
+    export_url_base: str = Field(
+        default="http://localhost:8000"
+    )  # Base URL for download links
+    export_ttl_hours: int = Field(default=24)  # How long exports are available
+
+    # Google Cloud Storage (only needed if export_storage_backend=gcs)
+    gcs_bucket_name: str = Field(default="")
+    gcs_credentials_file: str = Field(
+        default=""
+    )  # Path to service account JSON file
+
     # Environment
     env: str = Field(default="dev", pattern="^(dev|prod)$")
 

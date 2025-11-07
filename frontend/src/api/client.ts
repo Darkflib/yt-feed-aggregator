@@ -182,6 +182,26 @@ class APIClient {
   async getWatchedVideos(): Promise<{ video_ids: string[] }> {
     return this.request<{ video_ids: string[] }>('/api/watched');
   }
+
+  /**
+   * Request data export
+   * Creates a job in the queue and user will receive an email when ready
+   */
+  async requestDataExport(): Promise<{ job_id: string; message: string }> {
+    return this.request<{ job_id: string; message: string }>('/api/account/export', {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Request account deletion
+   * Sends a confirmation email with a link to complete the deletion
+   */
+  async requestAccountDeletion(): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/api/account/delete', {
+      method: 'POST',
+    });
+  }
 }
 
 // Export a singleton instance

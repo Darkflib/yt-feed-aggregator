@@ -12,6 +12,7 @@ from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api import (
+    account_router,
     feed_router,
     health_router,
     me_router,
@@ -95,6 +96,7 @@ def create_app() -> FastAPI:
     app.include_router(subscriptions_router)
     app.include_router(feed_router)
     app.include_router(watched_router)
+    app.include_router(account_router)
 
     # Mount static files (built frontend) if static directory exists
     static_dir = Path(__file__).parent / "static"
