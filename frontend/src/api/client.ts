@@ -28,6 +28,7 @@ export interface FeedItem {
   channel_title: string;
   thumbnail_url?: string;
   description?: string;
+  watched?: boolean;
 }
 
 export interface FeedResponse {
@@ -77,6 +78,15 @@ class APIClient {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
       throw new Error(errorData.detail || `HTTP ${response.status}`);
+    }
+
+    // Handle empty responses (204 No Content, empty body, or non-JSON responses)
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
+      return undefined as T;
+    }
+
+    if (response.headers.get('content-type')?.includes('application/json') !== true) {
+      return undefined as T;
     }
 
     return response.json();
@@ -145,6 +155,32 @@ class APIClient {
     const endpoint = `/api/feed${queryString ? `?${queryString}` : ''}`;
 
     return this.request<FeedResponse>(endpoint);
+  }
+
+  /**
+   * Mark a video as watched
+   */
+  async markVideoWatched(video_id: string, channel_id: string): Promise<void> {
+    await this.request<void>('/api/watched', {
+      method: 'POST',
+      body: JSON.stringify({ video_id, channel_id }),
+    });
+  }
+
+  /**
+   * Unmark a video as watched
+   */
+  async unmarkVideoWatched(video_id: string): Promise<void> {
+    await this.request<void>(`/api/watched/${video_id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  /**
+   * Get list of watched video IDs
+   */
+  async getWatchedVideos(): Promise<{ video_ids: string[] }> {
+    return this.request<{ video_ids: string[] }>('/api/watched');
   }
 }
 

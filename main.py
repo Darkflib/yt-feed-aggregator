@@ -11,7 +11,13 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.api import feed_router, health_router, me_router, subscriptions_router
+from app.api import (
+    feed_router,
+    health_router,
+    me_router,
+    subscriptions_router,
+    watched_router,
+)
 from app.auth.router import router as auth_router
 from app.config import get_settings
 
@@ -78,7 +84,7 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=[settings.frontend_origin],
         allow_credentials=True,
-        allow_methods=["GET", "POST", "OPTIONS"],  # Only methods used by the API
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],  # Methods used by the API
         allow_headers=["Content-Type", "Accept"],  # Only necessary headers
     )
 
@@ -88,6 +94,7 @@ def create_app() -> FastAPI:
     app.include_router(me_router)
     app.include_router(subscriptions_router)
     app.include_router(feed_router)
+    app.include_router(watched_router)
 
     # Mount static files (built frontend) if static directory exists
     static_dir = Path(__file__).parent / "static"

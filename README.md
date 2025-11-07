@@ -12,15 +12,16 @@ It logs into your Google account, fetches your **subscriptions**, retrieves thei
 
 ---
 
-## 🚀 Features (MVP)
+## 🚀 Features
 
 | Type                      | Description                                                      |
 | ------------------------- | ---------------------------------------------------------------- |
 | 🔐 **Google Login**       | OAuth 2.0 via Google (YouTube read-only scope).                  |
 | 📺 **Subscription Fetch** | Uses YouTube Data API to list channels you follow.               |
-| 📰 **Feed Aggregation**   | Pulls and caches each channel’s RSS feed (30–43 min TTL).        |
+| 📰 **Feed Aggregation**   | Pulls and caches each channel's RSS feed (30–43 min TTL).        |
 | 🧮 **Unified Timeline**   | Merges all videos, sorted chronologically, excluding Shorts.     |
 | ⚡ **Pagination**          | Cursor-based paging for infinite scrolling or next/prev buttons. |
+| 👁️ **Watched Videos**     | Track watched videos, dim watched items, filter to hide watched. |
 | 🌑 **Clean UI**           | SPA with grid/list toggle, channel sidebar, dark mode default.   |
 | 🧠 **Cache-Aware**        | Redis caching for RSS and oEmbed data.                           |
 | 🐳 **Containerized**      | Single image build for Podman or Docker.                         |
@@ -264,9 +265,10 @@ For more details, see [CI.md](CI.md).
 | Phase | Feature                                |
 | ----- | -------------------------------------- |
 | ✅ MVP | Subscriptions → Feeds → Paginated UI   |
-| 🔜 v2 | Mark-as-watched, Channel search/filter |
-| 🔜 v3 | Progressive Web App (offline mode)     |
-| 🔜 v4 | Optional notifications or web push     |
+| ✅ v2  | Mark-as-watched tracking and filtering |
+| 🔜 v3  | Channel search/filter enhancements     |
+| 🔜 v4  | Progressive Web App (offline mode)     |
+| 🔜 v5  | Optional notifications or web push     |
 
 ---
 

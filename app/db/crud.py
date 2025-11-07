@@ -1,9 +1,11 @@
 """CRUD utilities for database operations."""
 
-from sqlalchemy import select
+from datetime import datetime, timezone
+
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import User, UserChannel
+from app.db.models import User, UserChannel, WatchedVideo
 
 
 async def get_user_by_sub(db: AsyncSession, sub: str) -> User | None:
@@ -106,3 +108,80 @@ async def list_user_channels(
         query = query.where(UserChannel.active)
     result = await db.execute(query.order_by(UserChannel.channel_title))
     return list(result.scalars().all())
+
+
+async def mark_video_watched(
+    db: AsyncSession, user_id: str, video_id: str, channel_id: str
+) -> WatchedVideo:
+    """Mark a video as watched for a user (upsert).
+
+    Args:
+        db: Database session
+        user_id: The user's ID
+        video_id: YouTube video ID
+        channel_id: YouTube channel ID
+
+    Returns:
+        WatchedVideo object
+    """
+    # Check if already watched
+    result = await db.execute(
+        select(WatchedVideo).where(
+            WatchedVideo.user_id == user_id,
+            WatchedVideo.video_id == video_id,
+        )
+    )
+    watched = result.scalar_one_or_none()
+
+    if watched:
+        # Update watched_at timestamp
+        watched.watched_at = datetime.now(timezone.utc)
+    else:
+        # Create new watched entry
+        watched = WatchedVideo(
+            user_id=user_id,
+            video_id=video_id,
+            channel_id=channel_id,
+        )
+        db.add(watched)
+
+    await db.commit()
+    await db.refresh(watched)
+    return watched
+
+
+async def unmark_video_watched(db: AsyncSession, user_id: str, video_id: str) -> bool:
+    """Unmark a video as watched for a user.
+
+    Args:
+        db: Database session
+        user_id: The user's ID
+        video_id: YouTube video ID
+
+    Returns:
+        True if the video was unmarked, False if it wasn't marked
+    """
+    result = await db.execute(
+        delete(WatchedVideo).where(
+            WatchedVideo.user_id == user_id,
+            WatchedVideo.video_id == video_id,
+        )
+    )
+    await db.commit()
+    return result.rowcount > 0
+
+
+async def get_watched_video_ids(db: AsyncSession, user_id: str) -> set[str]:
+    """Get all watched video IDs for a user.
+
+    Args:
+        db: Database session
+        user_id: The user's ID
+
+    Returns:
+        Set of video IDs
+    """
+    result = await db.execute(
+        select(WatchedVideo.video_id).where(WatchedVideo.user_id == user_id)
+    )
+    return set(result.scalars().all())

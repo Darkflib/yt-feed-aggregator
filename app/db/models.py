@@ -55,3 +55,28 @@ class UserChannel(Base):
     added_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="channels")
+
+
+class WatchedVideo(Base):
+    """User's watched videos tracking."""
+
+    __tablename__ = "watched_videos"
+    __table_args__ = (
+        # Ensure a user can only mark a video as watched once
+        # Using index with unique constraint for efficient lookups
+        {"sqlite_autoincrement": False},
+    )
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=uid)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    video_id: Mapped[str] = mapped_column(String)
+    channel_id: Mapped[str] = mapped_column(String)
+    watched_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped["User"] = relationship()

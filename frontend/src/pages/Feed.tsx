@@ -5,6 +5,7 @@ import VideoCard from '../components/VideoCard';
 import ChannelSidebar from '../components/ChannelSidebar';
 import Pagination from '../components/Pagination';
 import ViewToggle from '../components/ViewToggle';
+import WatchedFilter from '../components/WatchedFilter';
 
 export default function Feed() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function Feed() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hideWatched, setHideWatched] = useState(false);
 
   // Pagination state
   const [cursors, setCursors] = useState<(string | null)[]>([null]);
@@ -144,6 +146,59 @@ export default function Feed() {
     }
   };
 
+  const handleMarkWatched = async (video_id: string, channel_id: string) => {
+    // Optimistic update
+    setFeedItems((items) =>
+      items.map((item) =>
+        item.video_id === video_id ? { ...item, watched: true } : item
+      )
+    );
+
+    try {
+      await api.markVideoWatched(video_id, channel_id);
+    } catch (err) {
+      // Revert on error
+      setFeedItems((items) =>
+        items.map((item) =>
+          item.video_id === video_id ? { ...item, watched: false } : item
+        )
+      );
+      console.error('Failed to mark video as watched:', err);
+      setError(err instanceof Error ? err.message : 'Failed to mark video as watched');
+    }
+  };
+
+  const handleUnmarkWatched = async (video_id: string) => {
+    // Optimistic update
+    setFeedItems((items) =>
+      items.map((item) =>
+        item.video_id === video_id ? { ...item, watched: false } : item
+      )
+    );
+
+    try {
+      await api.unmarkVideoWatched(video_id);
+    } catch (err) {
+      // Revert on error
+      setFeedItems((items) =>
+        items.map((item) =>
+          item.video_id === video_id ? { ...item, watched: true } : item
+        )
+      );
+      console.error('Failed to unmark video as watched:', err);
+      setError(err instanceof Error ? err.message : 'Failed to unmark video as watched');
+    }
+  };
+
+  // Filter feedItems based on hideWatched state
+  const filteredFeedItems = hideWatched
+    ? feedItems.filter((item) => !item.watched)
+    : feedItems;
+
+  // Calculate counts for the filter toggle
+  const watchedCount = feedItems.filter((item) => item.watched).length;
+  const totalCount = feedItems.length;
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
@@ -191,6 +246,12 @@ export default function Feed() {
             </div>
 
             <div className="flex items-center gap-4">
+              <WatchedFilter
+                hideWatched={hideWatched}
+                onToggle={setHideWatched}
+                watchedCount={watchedCount}
+                totalCount={totalCount}
+              />
               <ViewToggle viewMode={viewMode} onToggle={setViewMode} />
 
               {user && (
@@ -240,7 +301,7 @@ export default function Feed() {
 
           {/* Feed */}
           <main className="flex-1 min-w-0">
-            {feedItems.length === 0 ? (
+            {filteredFeedItems.length === 0 ? (
               <div className="text-center py-16">
                 <svg
                   className="w-16 h-16 text-gray-600 mx-auto mb-4"
@@ -259,7 +320,9 @@ export default function Feed() {
                   No videos found
                 </h3>
                 <p className="text-gray-500">
-                  {channels.length === 0
+                  {hideWatched && feedItems.length > 0
+                    ? 'All videos on this page are watched. Try showing watched videos or going to another page.'
+                    : channels.length === 0
                     ? 'Click "Refresh" in the sidebar to sync your YouTube subscriptions.'
                     : 'Try selecting a different channel or refreshing your subscriptions.'}
                 </p>
@@ -273,11 +336,13 @@ export default function Feed() {
                       : 'space-y-6'
                   }
                 >
-                  {feedItems.map((item) => (
+                  {filteredFeedItems.map((item) => (
                     <VideoCard
                       key={item.video_id}
                       video={item}
                       viewMode={viewMode}
+                      onMarkWatched={handleMarkWatched}
+                      onUnmarkWatched={handleUnmarkWatched}
                     />
                   ))}
                 </div>
