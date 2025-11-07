@@ -18,8 +18,16 @@ limiter = Limiter(key_func=get_remote_address)
 class MarkWatchedRequest(BaseModel):
     """Request model for marking a video as watched."""
 
-    video_id: str = Field(min_length=1, pattern=r"^\S+$", description="YouTube video ID")
-    channel_id: str = Field(min_length=1, pattern=r"^\S+$", description="YouTube channel ID")
+    video_id: str = Field(
+        min_length=1,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="YouTube video ID",
+    )
+    channel_id: str = Field(
+        min_length=1,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="YouTube channel ID",
+    )
 
 
 class WatchedVideoResponse(BaseModel):
@@ -50,6 +58,9 @@ async def mark_video_watched(
     This endpoint allows users to mark videos as watched. If the video is already
     marked as watched, it updates the watched_at timestamp.
 
+    Input validation is handled by Pydantic Field constraints. Invalid input
+    (empty, whitespace, or invalid characters) will result in a 422 validation error.
+
     Rate limit: 60 requests per minute per IP.
 
     Args:
@@ -57,6 +68,9 @@ async def mark_video_watched(
 
     Returns:
         Watched video details including video_id, channel_id, and watched_at timestamp
+
+    Raises:
+        HTTPException: 422 if video_id or channel_id is invalid
     """
     watched = await crud.mark_video_watched(db, user.id, body.video_id, body.channel_id)
 
