@@ -67,9 +67,7 @@ async def mark_video_watched(
     if not body.channel_id or not body.channel_id.strip():
         raise HTTPException(status_code=400, detail="channel_id cannot be empty")
 
-    watched = await crud.mark_video_watched(
-        db, user.id, body.video_id, body.channel_id
-    )
+    watched = await crud.mark_video_watched(db, user.id, body.video_id, body.channel_id)
 
     return WatchedVideoResponse(
         video_id=watched.video_id,
@@ -108,9 +106,7 @@ async def unmark_video_watched(
     success = await crud.unmark_video_watched(db, user.id, video_id)
 
     if not success:
-        raise HTTPException(
-            status_code=404, detail="Video not found in watched list"
-        )
+        raise HTTPException(status_code=404, detail="Video not found in watched list")
 
 
 @router.get("", response_model=WatchedVideosListResponse)

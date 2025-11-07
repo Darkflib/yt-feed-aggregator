@@ -30,7 +30,7 @@ async def db_engine():
     engine = create_async_engine(
         "sqlite+aiosqlite:///:memory:",
         echo=False,
-        connect_args={"check_same_thread": False}
+        connect_args={"check_same_thread": False},
     )
 
     # Enable foreign key support for SQLite
@@ -58,7 +58,7 @@ async def test_db():
     engine = create_async_engine(
         "sqlite+aiosqlite:///:memory:",
         future=True,
-        connect_args={"check_same_thread": False}
+        connect_args={"check_same_thread": False},
     )
 
     # Enable foreign key support for SQLite
@@ -133,9 +133,7 @@ async def test_mark_video_watched(db_session: AsyncSession):
     await db_session.refresh(user)
 
     # Mark a video as watched
-    watched = await mark_video_watched(
-        db_session, user.id, "video123", "channel456"
-    )
+    watched = await mark_video_watched(db_session, user.id, "video123", "channel456")
 
     assert watched.id is not None
     assert watched.user_id == user.id
@@ -159,16 +157,12 @@ async def test_mark_video_watched_updates_timestamp(db_session: AsyncSession):
     await db_session.refresh(user)
 
     # Mark a video as watched the first time
-    watched1 = await mark_video_watched(
-        db_session, user.id, "video123", "channel456"
-    )
+    watched1 = await mark_video_watched(db_session, user.id, "video123", "channel456")
     first_watched_at = watched1.watched_at
     first_id = watched1.id
 
     # Mark the same video as watched again
-    watched2 = await mark_video_watched(
-        db_session, user.id, "video123", "channel456"
-    )
+    watched2 = await mark_video_watched(db_session, user.id, "video123", "channel456")
 
     # Should be the same record (same ID) but with updated timestamp
     assert watched2.id == first_id
@@ -295,9 +289,7 @@ async def test_watched_video_unique_constraint(db_session: AsyncSession):
     # This should be handled by the mark_video_watched function (upsert logic)
     # but if we try to insert directly, it would fail
     # For this test, we verify the upsert behavior works
-    watched2 = await mark_video_watched(
-        db_session, user.id, "video123", "channel456"
-    )
+    watched2 = await mark_video_watched(db_session, user.id, "video123", "channel456")
 
     # Should be the same record
     assert watched2.id == watched1.id
@@ -529,7 +521,9 @@ async def test_get_watched_videos_requires_auth(test_app, test_db):
 
 
 @pytest.mark.asyncio
-async def test_feed_includes_watched_status(test_app, test_db, test_user, mock_settings):
+async def test_feed_includes_watched_status(
+    test_app, test_db, test_user, mock_settings
+):
     """Test that /api/feed includes watched status for videos."""
     # Add a channel to database
     async with test_db() as db:
@@ -575,6 +569,7 @@ async def test_feed_includes_watched_status(test_app, test_db, test_user, mock_s
 
     # Reset the settings cache and patch both locations
     import app.config
+
     original_settings = app.config._settings
     app.config._settings = mock_settings
 
@@ -599,11 +594,19 @@ async def test_feed_includes_watched_status(test_app, test_db, test_user, mock_s
 
                     # Find the videos and check watched status
                     video1 = next(
-                        (item for item in data["items"] if item["video_id"] == "video1"),
+                        (
+                            item
+                            for item in data["items"]
+                            if item["video_id"] == "video1"
+                        ),
                         None,
                     )
                     video2 = next(
-                        (item for item in data["items"] if item["video_id"] == "video2"),
+                        (
+                            item
+                            for item in data["items"]
+                            if item["video_id"] == "video2"
+                        ),
                         None,
                     )
 
@@ -655,6 +658,7 @@ async def test_feed_watched_status_with_no_watched_videos(
 
     # Reset the settings cache and patch both locations
     import app.config
+
     original_settings = app.config._settings
     app.config._settings = mock_settings
 

@@ -150,9 +150,7 @@ async def mark_video_watched(
     return watched
 
 
-async def unmark_video_watched(
-    db: AsyncSession, user_id: str, video_id: str
-) -> bool:
+async def unmark_video_watched(db: AsyncSession, user_id: str, video_id: str) -> bool:
     """Unmark a video as watched for a user.
 
     Args:
