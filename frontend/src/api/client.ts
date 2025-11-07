@@ -170,8 +170,8 @@ class APIClient {
   /**
    * Get list of watched video IDs
    */
-  async getWatchedVideos(): Promise<string[]> {
-    return this.request<string[]>('/api/watched');
+  async getWatchedVideos(): Promise<{ video_ids: string[] }> {
+    return this.request<{ video_ids: string[] }>('/api/watched');
   }
 }
 
