@@ -89,7 +89,7 @@ class APIClient {
       return undefined as T;
     }
 
-    return response.json() as Promise<T>;
+    return response.json();
   }
 
   /**
