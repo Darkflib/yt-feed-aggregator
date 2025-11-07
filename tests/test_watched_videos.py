@@ -62,6 +62,8 @@ async def db_session(db_sessionmaker):
 async def test_db(db_sessionmaker):
     """Yield the async sessionmaker for API tests."""
     yield db_sessionmaker
+
+
 @pytest_asyncio.fixture
 async def test_user(test_db):
     """Create a test user in the database."""
