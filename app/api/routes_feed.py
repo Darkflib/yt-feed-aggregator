@@ -96,13 +96,23 @@ async def get_feed(
             # In production, you might want to log this
             continue
 
+    # Get watched video IDs for the current user
+    watched_video_ids = await crud.get_watched_video_ids(db, user.id)
+
     # Aggregate and paginate
     result = aggregate_feeds(
         feeds, include_shorts=settings.include_shorts, limit=limit, cursor=cursor
     )
 
     # Serialize items using model_dump(mode='json') for proper datetime handling
+    # Add watched status to each item
+    items_with_watched = []
+    for item in result["items"]:
+        item_dict = item.model_dump(mode="json")
+        item_dict["watched"] = item.video_id in watched_video_ids
+        items_with_watched.append(item_dict)
+
     return {
-        "items": [item.model_dump(mode="json") for item in result["items"]],
+        "items": items_with_watched,
         "next_cursor": result["next_cursor"],
     }

@@ -28,6 +28,7 @@ export interface FeedItem {
   channel_title: string;
   thumbnail_url?: string;
   description?: string;
+  watched?: boolean;
 }
 
 export interface FeedResponse {
@@ -145,6 +146,32 @@ class APIClient {
     const endpoint = `/api/feed${queryString ? `?${queryString}` : ''}`;
 
     return this.request<FeedResponse>(endpoint);
+  }
+
+  /**
+   * Mark a video as watched
+   */
+  async markVideoWatched(video_id: string, channel_id: string): Promise<void> {
+    await this.request<void>('/api/watched', {
+      method: 'POST',
+      body: JSON.stringify({ video_id, channel_id }),
+    });
+  }
+
+  /**
+   * Unmark a video as watched
+   */
+  async unmarkVideoWatched(video_id: string): Promise<void> {
+    await this.request<void>(`/api/watched/${video_id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  /**
+   * Get list of watched video IDs
+   */
+  async getWatchedVideos(): Promise<string[]> {
+    return this.request<string[]>('/api/watched');
   }
 }
 
