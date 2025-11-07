@@ -62,9 +62,9 @@ async def mark_video_watched(
         HTTPException: 400 if video_id or channel_id is empty
     """
     # Validate input
-    if not body.video_id or not body.video_id.strip():
+    if not body.video_id.strip():
         raise HTTPException(status_code=400, detail="video_id cannot be empty")
-    if not body.channel_id or not body.channel_id.strip():
+    if not body.channel_id.strip():
         raise HTTPException(status_code=400, detail="channel_id cannot be empty")
 
     watched = await crud.mark_video_watched(db, user.id, body.video_id, body.channel_id)
