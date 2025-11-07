@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.db.crud import get_user_export_data
-from app.db.session import get_session
+from app.db.session import get_sessionmaker
 from app.email_service import send_data_export_ready_email
 from app.storage import get_storage_backend
 
@@ -270,16 +270,14 @@ async def worker_loop() -> None:
             logger.info(f"Picked up export job: {job_id}")
 
             # Process the job
-            # Get database session
-            async for db in get_session():
+            # Get database session using context manager
+            async with get_sessionmaker()() as db:
                 success = await process_export_job(job_id, redis, db)
 
                 if success:
                     logger.info(f"Job {job_id} processed successfully")
                 else:
                     logger.error(f"Job {job_id} failed")
-
-                break  # Exit the async generator
 
         except KeyboardInterrupt:
             logger.info("Worker received shutdown signal")

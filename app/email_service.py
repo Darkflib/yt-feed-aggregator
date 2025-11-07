@@ -199,7 +199,7 @@ async def send_data_export_ready_email(
 
 Your requested data export is now ready for download.
 
-Download your data here (link expires in 24 hours):
+Download your data here (link expires in {settings.export_ttl_hours} hours):
 {download_link}
 
 Your export includes:
@@ -240,7 +240,7 @@ YouTube Feed Aggregator
             </ul>
         </div>
 
-        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">⏱️ This download link will expire in <strong>24 hours</strong>.</p>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">⏱️ This download link will expire in <strong>{settings.export_ttl_hours} hours</strong>.</p>
 
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 
