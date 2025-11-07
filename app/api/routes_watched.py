@@ -100,7 +100,7 @@ async def unmark_video_watched(
     Raises:
         HTTPException: 404 if the video was not marked as watched
     """
-    if not video_id or not video_id.strip():
+    if not video_id.strip():
         raise HTTPException(status_code=400, detail="video_id cannot be empty")
 
     success = await crud.unmark_video_watched(db, user.id, video_id)
