@@ -11,9 +11,9 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+import app.config
 from app.api import feed_router, watched_router
 from app.auth.router import SESSION_COOKIE, _create_session_token
-from app.config import Settings
 from app.db.crud import (
     get_watched_video_ids,
     mark_video_watched,
@@ -83,7 +83,7 @@ async def test_user(test_db):
 @pytest.fixture
 def mock_settings():
     """Create mock settings."""
-    settings = MagicMock(spec=Settings)
+    settings = MagicMock(spec=app.config.Settings)
     settings.app_secret_key = "test-secret-key"
     settings.token_enc_key = base64.b64encode(b"0" * 32).decode()
     settings.google_client_id = "test-client-id"
@@ -557,7 +557,6 @@ async def test_feed_includes_watched_status(
     test_app.dependency_overrides["app.api.dependencies.get_redis"] = mock_get_redis
 
     # Reset the settings cache and patch both locations
-    import app.config
 
     original_settings = app.config._settings
     app.config._settings = mock_settings
@@ -646,7 +645,6 @@ async def test_feed_watched_status_with_no_watched_videos(
     test_app.dependency_overrides["app.api.dependencies.get_redis"] = mock_get_redis
 
     # Reset the settings cache and patch both locations
-    import app.config
 
     original_settings = app.config._settings
     app.config._settings = mock_settings
