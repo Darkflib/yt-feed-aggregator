@@ -126,7 +126,14 @@ YT_DATABASE_URL=sqlite+aiosqlite:///./dev.db
 YT_REDIS_URL=redis://localhost:6379/0
 YT_FEED_TTL_SECONDS=1800
 YT_FEED_TTL_SPLAY_MAX=780
+
+# Optional: Mailgun (for account deletion confirmation emails)
+YT_MAILGUN_API_KEY=your-api-key
+YT_MAILGUN_DOMAIN=mg.yourdomain.com
+YT_MAILGUN_FROM_EMAIL=noreply@yourdomain.com
 ```
+
+**Note:** Mailgun credentials are optional. If not configured, the account deletion feature will return an error when users attempt to delete their accounts. Get Mailgun credentials from [app.mailgun.com](https://app.mailgun.com/).
 
 ### 3️⃣ Run Redis
 

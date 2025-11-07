@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # CORS
     frontend_origin: str = "http://localhost:5173"
 
+    # Mailgun (for transactional emails)
+    mailgun_api_key: str = Field(default="")
+    mailgun_domain: str = Field(default="")
+    mailgun_from_email: str = Field(default="noreply@example.com")
+
     # Environment
     env: str = Field(default="dev", pattern="^(dev|prod)$")
 

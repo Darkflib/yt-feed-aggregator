@@ -1,5 +1,6 @@
 """API routers for the YouTube Feed Aggregator."""
 
+from app.api.routes_account import router as account_router
 from app.api.routes_feed import router as feed_router
 from app.api.routes_health import router as health_router
 from app.api.routes_me import router as me_router
@@ -12,4 +13,5 @@ __all__ = [
     "subscriptions_router",
     "feed_router",
     "watched_router",
+    "account_router",
 ]
