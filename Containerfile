@@ -36,12 +36,19 @@ COPY alembic ./alembic
 # Copy built frontend from stage 1
 COPY --from=frontend /app/frontend/dist ./static
 
+# Copy entrypoint script
+COPY entrypoint.sh ./
+RUN chmod +x entrypoint.sh
+
 # Expose port 8080
 EXPOSE 8080
 
-# Health check on /healthz endpoint
+# Health check on /healthz endpoint (only for web mode)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/healthz || exit 1
 
-# Run uvicorn server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Use entrypoint script that supports both web and worker modes
+ENTRYPOINT ["./entrypoint.sh"]
+
+# Default to web mode
+CMD ["web"]

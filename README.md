@@ -22,9 +22,11 @@ It logs into your Google account, fetches your **subscriptions**, retrieves thei
 | 🧮 **Unified Timeline**   | Merges all videos, sorted chronologically, excluding Shorts.     |
 | ⚡ **Pagination**          | Cursor-based paging for infinite scrolling or next/prev buttons. |
 | 👁️ **Watched Videos**     | Track watched videos, dim watched items, filter to hide watched. |
+| 📦 **Data Export**        | Export all your data (profile, subscriptions, watch history).    |
+| 🗑️ **Account Deletion**   | Two-step account deletion with email confirmation.               |
 | 🌑 **Clean UI**           | SPA with grid/list toggle, channel sidebar, dark mode default.   |
 | 🧠 **Cache-Aware**        | Redis caching for RSS and oEmbed data.                           |
-| 🐳 **Containerized**      | Single image build for Podman or Docker.                         |
+| 🐳 **Containerized**      | Single image build for Podman or Docker, worker mode supported.  |
 
 ---
 
@@ -126,7 +128,14 @@ YT_DATABASE_URL=sqlite+aiosqlite:///./dev.db
 YT_REDIS_URL=redis://localhost:6379/0
 YT_FEED_TTL_SECONDS=1800
 YT_FEED_TTL_SPLAY_MAX=780
+
+# Optional: Mailgun (for account deletion confirmation emails)
+YT_MAILGUN_API_KEY=your-api-key
+YT_MAILGUN_DOMAIN=mg.yourdomain.com
+YT_MAILGUN_FROM_EMAIL=noreply@yourdomain.com
 ```
+
+**Note:** Mailgun credentials are optional. If not configured, the account deletion feature will return an error when users attempt to delete their accounts. Get Mailgun credentials from [app.mailgun.com](https://app.mailgun.com/).
 
 ### 3️⃣ Run Redis
 
@@ -170,10 +179,31 @@ Use `pytest --disable-warnings -v` for detailed coverage.
 
 ```bash
 podman build -t yt-simple .
+
+# Run web server
 podman run -d -p 8080:8080 \
   --env-file=.env \
   --name yt-simple \
-  yt-simple
+  yt-simple web
+
+# Run export worker
+podman run -d \
+  --env-file=.env \
+  --name yt-simple-worker \
+  yt-simple worker
+```
+
+### Using Docker Compose
+
+```bash
+# Start all services (web + worker + nginx + redis + postgres)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Scale workers
+docker-compose up -d --scale worker=3
 ```
 
 ### Health check
