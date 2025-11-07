@@ -80,6 +80,15 @@ class APIClient {
       throw new Error(errorData.detail || `HTTP ${response.status}`);
     }
 
+    // Handle empty responses (204 No Content, empty body, or non-JSON responses)
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
+      return undefined as T;
+    }
+
+    if (response.headers.get('content-type')?.includes('application/json') !== true) {
+      return undefined as T;
+    }
+
     return response.json();
   }
 
