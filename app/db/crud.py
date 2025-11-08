@@ -168,7 +168,7 @@ async def unmark_video_watched(db: AsyncSession, user_id: str, video_id: str) ->
         )
     )
     await db.commit()
-    return result.rowcount > 0
+    return result.rowcount > 0  # type: ignore[attr-defined]
 
 
 async def get_watched_video_ids(db: AsyncSession, user_id: str) -> set[str]:
@@ -267,4 +267,4 @@ async def delete_user_account(db: AsyncSession, user_id: str) -> bool:
     """
     result = await db.execute(delete(User).where(User.id == user_id))
     await db.commit()
-    return result.rowcount > 0
+    return result.rowcount > 0  # type: ignore[attr-defined]

@@ -67,11 +67,11 @@ async def request_data_export(
     }
 
     # Store job metadata (24 hour TTL)
-    await redis.hset(job_key, mapping=job_data)  # type: ignore[arg-type]
-    await redis.expire(job_key, 86400)  # 24 hours
+    await redis.hset(job_key, mapping=job_data)  # type: ignore[arg-type, misc]
+    await redis.expire(job_key, 86400)  # 24 hours  # type: ignore[misc]
 
     # Add job to queue (FIFO)
-    await redis.lpush("yt:export:queue", job_id)
+    await redis.lpush("yt:export:queue", job_id)  # type: ignore[misc]
 
     return ExportResponse(
         job_id=job_id,
@@ -214,7 +214,7 @@ async def get_export_status(
     Rate limit: 60 requests per minute per IP.
     """
     job_key = f"yt:export:job:{job_id}"
-    job_data = await redis.hgetall(job_key)
+    job_data = await redis.hgetall(job_key)  # type: ignore[misc]
 
     if not job_data:
         raise HTTPException(status_code=404, detail="Export job not found")
@@ -285,7 +285,7 @@ async def download_export(
 
     # Verify the job exists and belongs to the user
     job_key = f"yt:export:job:{job_id}"
-    job_data = await redis.hgetall(job_key)
+    job_data = await redis.hgetall(job_key)  # type: ignore[misc]
     if not job_data or job_data.get(b"user_id", b"").decode("utf-8") != user.id:
         raise HTTPException(
             status_code=403, detail="Invalid or unauthorized export job"

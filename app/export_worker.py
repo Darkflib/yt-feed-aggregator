@@ -97,7 +97,7 @@ async def process_export_job(
     try:
         # Get job metadata
         job_key = f"yt:export:job:{job_id}"
-        job_data = await redis.hgetall(job_key)
+        job_data = await redis.hgetall(job_key)  # type: ignore[misc]
 
         if not job_data:
             logger.error(f"Job {job_id} not found in Redis")
@@ -114,15 +114,15 @@ async def process_export_job(
         logger.info(f"Processing export job {job_id} for user {user_id}")
 
         # Update job status to processing
-        await redis.hset(job_key, "status", "processing")
+        await redis.hset(job_key, "status", "processing")  # type: ignore[misc]
 
         # Fetch user data
         export_data = await get_user_export_data(db, user_id)
 
         if not export_data["profile"]:
             logger.error(f"User {user_id} not found for export job {job_id}")
-            await redis.hset(job_key, "status", "failed")
-            await redis.hset(job_key, "error", "User not found")
+            await redis.hset(job_key, "status", "failed")  # type: ignore[misc]
+            await redis.hset(job_key, "error", "User not found")  # type: ignore[misc]
             return False
 
         # Create ZIP file
@@ -143,10 +143,10 @@ async def process_export_job(
         download_url = await storage.get_download_url(storage_id)
 
         # Store download URL in Redis
-        await redis.hset(job_key, "storage_id", storage_id)
-        await redis.hset(job_key, "download_url", download_url)
-        await redis.hset(job_key, "completed_at", str(int(time.time())))
-        await redis.hset(job_key, "status", "completed")
+        await redis.hset(job_key, "storage_id", storage_id)  # type: ignore[misc]
+        await redis.hset(job_key, "download_url", download_url)  # type: ignore[misc]
+        await redis.hset(job_key, "completed_at", str(int(time.time())))  # type: ignore[misc]
+        await redis.hset(job_key, "status", "completed")  # type: ignore[misc]
 
         # Extend TTL to match export retention
         ttl_seconds = settings.export_ttl_hours * 3600
@@ -155,7 +155,7 @@ async def process_export_job(
         logger.info(f"Export job {job_id} completed successfully")
 
         # Send email notification
-        display_name = export_data["profile"].get("display_name", email.split("@")[0])
+        display_name = export_data["profile"].get("display_name", email.split("@")[0])  # type: ignore[union-attr]
 
         try:
             await send_data_export_ready_email(email, display_name, download_url)
@@ -171,8 +171,8 @@ async def process_export_job(
 
         # Update job status to failed
         job_key = f"yt:export:job:{job_id}"
-        await redis.hset(job_key, "status", "failed")
-        await redis.hset(job_key, "error", str(e))
+        await redis.hset(job_key, "status", "failed")  # type: ignore[misc]
+        await redis.hset(job_key, "error", str(e))  # type: ignore[misc]
 
         return False
 
@@ -198,7 +198,7 @@ async def cleanup_expired_exports(redis: Redis) -> None:
         cursor, keys = await redis.scan(cursor, match="yt:export:job:*", count=100)
 
         for key in keys:
-            job_data = await redis.hgetall(key)
+            job_data = await redis.hgetall(key)  # type: ignore[misc]
 
             if not job_data:
                 continue
