@@ -125,9 +125,9 @@ async def test_confirm_account_deletion_clears_session_cookie(
             # Verify response
             assert response.status_code == 200
             data = response.json()
-            assert (
-                "permanently deleted" in data["message"].lower()
-            ), f"Expected deletion message, got: {data['message']}"
+            assert "permanently deleted" in data["message"].lower(), (
+                f"Expected deletion message, got: {data['message']}"
+            )
 
             # Verify Redis calls
             mock_redis.get.assert_called_once_with(token_key)
@@ -135,16 +135,18 @@ async def test_confirm_account_deletion_clears_session_cookie(
 
             # Verify session cookie is cleared via set-cookie header
             set_cookie_header = response.headers.get("set-cookie", "")
-            assert (
-                SESSION_COOKIE in set_cookie_header
-            ), f"Session cookie should be in set-cookie header, got: {set_cookie_header}"
+            assert SESSION_COOKIE in set_cookie_header, (
+                f"Session cookie should be in set-cookie header, got: {set_cookie_header}"
+            )
 
             # Cookie deletion is indicated by max-age=0 or expires in the past
             # The response should include the cookie name in the set-cookie header
             assert (
                 "max-age=0" in set_cookie_header.lower()
                 or f"{SESSION_COOKIE}=" in set_cookie_header
-            ), f"Session cookie should be cleared/deleted in response headers: {set_cookie_header}"
+            ), (
+                f"Session cookie should be cleared/deleted in response headers: {set_cookie_header}"
+            )
 
 
 @pytest.mark.asyncio
@@ -172,13 +174,13 @@ async def test_confirm_account_deletion_uses_correct_cookie_settings(
 
             # Verify set-cookie header includes secure flag for production
             set_cookie_header = response.headers.get("set-cookie", "")
-            assert (
-                SESSION_COOKIE in set_cookie_header
-            ), "Session cookie should be in set-cookie header"
+            assert SESSION_COOKIE in set_cookie_header, (
+                "Session cookie should be in set-cookie header"
+            )
             # In production, the secure flag should be set
-            assert (
-                "secure" in set_cookie_header.lower()
-            ), "Cookie should have secure flag in production"
+            assert "secure" in set_cookie_header.lower(), (
+                "Cookie should have secure flag in production"
+            )
 
 
 @pytest.mark.asyncio

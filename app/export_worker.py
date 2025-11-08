@@ -69,9 +69,7 @@ All files are in JSON format and can be opened with any text editor.
 For questions or support, please contact the administrator.
 
 Export generated: {timestamp}
-""".format(
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
-        )
+""".format(timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()))
         zip_file.writestr("README.txt", readme)
 
     return zip_buffer.getvalue()
