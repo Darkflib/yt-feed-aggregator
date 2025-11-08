@@ -287,7 +287,9 @@ async def download_export(
     job_key = f"yt:export:job:{job_id}"
     job_data = await redis.hgetall(job_key)
     if not job_data or job_data.get(b"user_id", b"").decode("utf-8") != user.id:
-        raise HTTPException(status_code=403, detail="Invalid or unauthorized export job")
+        raise HTTPException(
+            status_code=403, detail="Invalid or unauthorized export job"
+        )
 
     # Check if file exists in storage
     if isinstance(storage, LocalStorageBackend):

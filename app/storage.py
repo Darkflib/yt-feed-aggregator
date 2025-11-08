@@ -102,7 +102,9 @@ class LocalStorageBackend(StorageBackend):
 
         # Security check
         if not file_path.resolve().is_relative_to(self.base_path.resolve()):
-            logger.error(f"Attempted to delete file outside exports directory: {storage_id}")
+            logger.error(
+                f"Attempted to delete file outside exports directory: {storage_id}"
+            )
             return False
 
         if file_path.exists():
@@ -143,7 +145,9 @@ class GCSStorageBackend(StorageBackend):
         self.url_base = settings.export_url_base.rstrip("/")
 
         if not self.bucket_name:
-            raise ValueError("GCS bucket name is required when using GCS storage backend")
+            raise ValueError(
+                "GCS bucket name is required when using GCS storage backend"
+            )
 
         # Lazy import to avoid requiring google-cloud-storage for local-only deployments
         try:
@@ -156,7 +160,9 @@ class GCSStorageBackend(StorageBackend):
 
         # Initialize GCS client
         if self.credentials_file:
-            self.client = storage.Client.from_service_account_json(self.credentials_file)
+            self.client = storage.Client.from_service_account_json(
+                self.credentials_file
+            )
         else:
             # Use default credentials (from GOOGLE_APPLICATION_CREDENTIALS env var or metadata)
             self.client = storage.Client()

@@ -48,7 +48,9 @@ class EmailService:
             ValueError: If Mailgun is not configured
         """
         if not self.is_configured():
-            logger.error("Mailgun is not configured. Set YT_MAILGUN_API_KEY and YT_MAILGUN_DOMAIN.")
+            logger.error(
+                "Mailgun is not configured. Set YT_MAILGUN_API_KEY and YT_MAILGUN_DOMAIN."
+            )
             raise ValueError("Email service is not configured")
 
         data: dict[str, Any] = {
@@ -84,7 +86,9 @@ class EmailService:
             logger.error(f"HTTP error while sending email to {to}: {e}", exc_info=True)
             return False
         except Exception as e:
-            logger.error(f"Unexpected error while sending email to {to}: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error while sending email to {to}: {e}", exc_info=True
+            )
             return False
 
 

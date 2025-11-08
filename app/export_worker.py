@@ -136,7 +136,9 @@ async def process_export_job(
         filename = f"export_{user_id}_{timestamp}_{job_id}.zip"
 
         # Save to storage
-        logger.info(f"Saving export to storage backend: {settings.export_storage_backend}")
+        logger.info(
+            f"Saving export to storage backend: {settings.export_storage_backend}"
+        )
         storage_id = await storage.save(filename, zip_data)
 
         # Get download URL

@@ -54,9 +54,7 @@ class Settings(BaseSettings):
 
     # Google Cloud Storage (only needed if export_storage_backend=gcs)
     gcs_bucket_name: str = Field(default="")
-    gcs_credentials_file: str = Field(
-        default=""
-    )  # Path to service account JSON file
+    gcs_credentials_file: str = Field(default="")  # Path to service account JSON file
 
     # Environment
     env: str = Field(default="dev", pattern="^(dev|prod)$")
