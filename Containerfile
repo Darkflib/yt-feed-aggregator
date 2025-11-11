@@ -8,7 +8,7 @@ COPY frontend/ .
 RUN npm run build
 
 # Stage 2: Python backend
-FROM python:3.13-slim AS backend
+FROM python:3.14-slim AS backend
 ENV PYTHONUNBUFFERED=1
 
 # Install curl for healthcheck
